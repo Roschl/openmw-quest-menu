@@ -14,14 +14,14 @@ local function loadQuests()
 end
 
 local function initQuestMenu()
+    ui.showMessage('INIT QUEST MENU')
     loadQuests()
 end
 
 local function createQuestList()
     local questlist = {}
 
-    for id, quest in pairs(quests) do
-        ui.showMessage('what do we know?' .. quest.stage)
+    for _, quest in pairs(quests) do
         table.insert(questlist, {
             type = ui.TYPE.Flex,
             props = {
@@ -129,6 +129,7 @@ end
 return {
     engineHandlers = {
         onInit = initQuestMenu,
+        onLoad = initQuestMenu,
         onQuestUpdate = onQuestUpdate,
         onKeyPress = function(key)
             if key.symbol == "x" and questMenu == nil then

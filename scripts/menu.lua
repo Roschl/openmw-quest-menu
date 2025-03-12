@@ -9,6 +9,18 @@ local core = require("openmw.core")
 local quests = {}
 local questMenu = nil
 
+local function findDialogueWithStage(dialogueTable, targetStage)
+    local filteredDialogue = nil
+
+    for _, dialogue in pairs(dialogueTable) do
+        if dialogue.questStage == targetStage then
+            filteredDialogue = dialogue
+        end
+    end
+
+    return filteredDialogue
+end
+
 local function loadQuests()
     quests = types.Player.quests(self)
     ui.showMessage('Quests loaded!')
@@ -24,6 +36,15 @@ local function createQuestList()
 
     for _, quest in pairs(quests) do
         local qid = quest.id:lower()
+        local dialogueRecord = core.dialogue.journal.records[qid]
+        local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
+
+        if dialogueRecordInfo == nil then
+            dialogueRecordInfo = {
+                text = "No Information Found"
+            }
+        end
+
         table.insert(questlist, {
             type = ui.TYPE.Flex,
             props = {
@@ -33,7 +54,7 @@ local function createQuestList()
                 {
                     type = ui.TYPE.Text,
                     props = {
-                        text = core.dialogue.journal.records[qid].questName,
+                        text = dialogueRecord.questName,
                         textColor = util.color.rgb(1, 1, 1),
                         textSize = 14,
                     },
@@ -52,6 +73,14 @@ local function createQuestList()
                         text = "Stage: " .. quest.stage,
                         textColor = util.color.rgb(0.5, 0.5, 0.5),
                         textSize = 12,
+                    },
+                },
+                {
+                    type = ui.TYPE.Text,
+                    props = {
+                        text = dialogueRecordInfo.text,
+                        textColor = util.color.rgb(1, 1, 1),
+                        textSize = 14,
                     },
                 },
             }

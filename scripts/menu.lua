@@ -1,23 +1,78 @@
+local self = require("openmw.self")
 local ui = require("openmw.ui")
 local util = require("openmw.util")
 local I = require('openmw.interfaces')
 local async = require('openmw.async')
+local types = require("openmw.types")
 
+local quests = {}
 local questMenu = nil
 
+local function loadQuests()
+    quests = types.Player.quests(self)
+    ui.showMessage('Quests loaded!')
+end
+
+local function initQuestMenu()
+    loadQuests()
+end
+
+local function createQuestList()
+    local questlist = {}
+
+    for id, quest in pairs(quests) do
+        ui.showMessage('what do we know?' .. quest.stage)
+        table.insert(questlist, {
+            type = ui.TYPE.Flex,
+            props = {
+                horizontal = true
+            },
+            content = ui.content {
+                {
+                    type = ui.TYPE.Text,
+                    props = {
+                        text = quest.id,
+                        textColor = util.color.rgb(0.5, 0.5, 0.5),
+                        textSize = 12,
+                    },
+                },
+                {
+                    type = ui.TYPE.Text,
+                    props = {
+                        text = "Stage: " .. quest.stage,
+                        textColor = util.color.rgb(0.5, 0.5, 0.5),
+                        textSize = 12,
+                    },
+                },
+
+            }
+        })
+    end
+
+    return ui.create {
+        type = ui.TYPE.Flex,
+        content = ui.content(questlist),
+    }
+end
+
 local function createButton(text, callback)
+    local buttonText = {
+        {
+            template = I.MWUI.templates.textNormal,
+            props = {
+                text = text,
+                textSize = 12
+            }
+        }
+    }
+
     return ui.create {
         type = ui.TYPE.Container,
         template = I.MWUI.templates.box,
         content = ui.content {
             {
                 template = I.MWUI.templates.padding,
-                content = ui.content {
-                    {
-                        template = I.MWUI.templates.textNormal,
-                        props = { text = text }
-                    }
-                }
+                content = ui.content(buttonText)
             }
         },
         events = {
@@ -48,8 +103,10 @@ local function createMenu()
                             textSize = 16,
                         },
                     },
-                    createButton('Button', function()
+                    createQuestList(),
+                    createButton('Refresh', function()
                         ui.showMessage('You have pressed "Button"')
+                        loadQuests()
                     end)
                 }
             }
@@ -57,8 +114,22 @@ local function createMenu()
     }
 end
 
+local function onQuestUpdate()
+    ui.showMessage('Quest UPDATE')
+    loadQuests();
+
+    if (questMenu) then
+        questMenu:destroy()
+        questMenu = nil
+    end
+
+    createMenu();
+end
+
 return {
     engineHandlers = {
+        onInit = initQuestMenu,
+        onQuestUpdate = onQuestUpdate,
         onKeyPress = function(key)
             if key.symbol == "x" and questMenu == nil then
                 createMenu()

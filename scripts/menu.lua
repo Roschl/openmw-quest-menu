@@ -4,6 +4,7 @@ local util = require("openmw.util")
 local I = require('openmw.interfaces')
 local async = require('openmw.async')
 local types = require("openmw.types")
+local core = require("openmw.core")
 
 local quests = {}
 local questMenu = nil
@@ -22,6 +23,7 @@ local function createQuestList()
     local questlist = {}
 
     for _, quest in pairs(quests) do
+        local qid = quest.id:lower()
         table.insert(questlist, {
             type = ui.TYPE.Flex,
             props = {
@@ -31,7 +33,15 @@ local function createQuestList()
                 {
                     type = ui.TYPE.Text,
                     props = {
-                        text = quest.id,
+                        text = core.dialogue.journal.records[qid].questName,
+                        textColor = util.color.rgb(1, 1, 1),
+                        textSize = 14,
+                    },
+                },
+                {
+                    type = ui.TYPE.Text,
+                    props = {
+                        text = qid,
                         textColor = util.color.rgb(0.5, 0.5, 0.5),
                         textSize = 12,
                     },
@@ -44,7 +54,6 @@ local function createQuestList()
                         textSize = 12,
                     },
                 },
-
             }
         })
     end

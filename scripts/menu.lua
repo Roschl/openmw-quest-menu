@@ -47,51 +47,67 @@ local function createQuestList()
 
         table.insert(questlist, {
             type = ui.TYPE.Flex,
+            props = {
+                horizontal = true
+            },
             content = ui.content {
                 {
-                    type = ui.TYPE.Flex,
+                    type = ui.TYPE.Image,
                     props = {
-                        horizontal = true
+                        size = util.vector2(48, 48),
+                        resource = ui.texture { path = 'white' },
+                        color = util.color.rgb(1, 1, 1),
                     },
-                    content = ui.content {
-                        {
-                            type = ui.TYPE.Text,
-                            props = {
-                                text = dialogueRecord.questName,
-                                textColor = util.color.rgb(1, 1, 1),
-                                textSize = 14,
-                                textAlignH = ui.ALIGNMENT.Start
-                            },
-                        },
-                        {
-                            type = ui.TYPE.Text,
-                            props = {
-                                text = qid,
-                                textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                textSize = 12,
-                                textAlignH = ui.ALIGNMENT.End
-                            },
-                        },
-                        {
-                            type = ui.TYPE.Text,
-                            props = {
-                                text = "Stage: " .. quest.stage,
-                                textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                textSize = 12,
-                                textAlignH = ui.ALIGNMENT.End
-                            },
-                        }
-                    }
                 },
                 {
-                    type = ui.TYPE.Text,
-                    props = {
-                        text = dialogueRecordInfo.text,
-                        textColor = util.color.rgb(1, 1, 1),
-                        textSize = 12,
-                        wordWrap = true
-                    },
-                },
+                    type = ui.TYPE.Flex,
+                    content = ui.content {
+                        {
+                            type = ui.TYPE.Flex,
+                            props = {
+                                horizontal = true
+                            },
+                            content = ui.content {
+                                {
+                                    type = ui.TYPE.Text,
+                                    props = {
+                                        text = dialogueRecord.questName,
+                                        textColor = util.color.rgb(1, 1, 1),
+                                        textSize = 14,
+                                        textAlignH = ui.ALIGNMENT.Start
+                                    },
+                                },
+                                {
+                                    type = ui.TYPE.Text,
+                                    props = {
+                                        text = qid,
+                                        textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                        textSize = 12,
+                                        textAlignH = ui.ALIGNMENT.End
+                                    },
+                                },
+                                {
+                                    type = ui.TYPE.Text,
+                                    props = {
+                                        text = "Stage: " .. quest.stage,
+                                        textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                        textSize = 12,
+                                        textAlignH = ui.ALIGNMENT.End
+                                    },
+                                }
+                            }
+                        },
+                        {
+                            type = ui.TYPE.Text,
+                            props = {
+                                text = dialogueRecordInfo.text,
+                                textColor = util.color.rgb(1, 1, 1),
+                                textSize = 12,
+                                wordWrap = true
+                            },
+                        },
+                    }
+                }
             }
         })
     end

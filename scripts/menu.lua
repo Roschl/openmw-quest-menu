@@ -47,40 +47,49 @@ local function createQuestList()
 
         table.insert(questlist, {
             type = ui.TYPE.Flex,
-            props = {
-                horizontal = true
-            },
             content = ui.content {
                 {
-                    type = ui.TYPE.Text,
+                    type = ui.TYPE.Flex,
                     props = {
-                        text = dialogueRecord.questName,
-                        textColor = util.color.rgb(1, 1, 1),
-                        textSize = 14,
+                        horizontal = true
                     },
-                },
-                {
-                    type = ui.TYPE.Text,
-                    props = {
-                        text = qid,
-                        textColor = util.color.rgb(0.5, 0.5, 0.5),
-                        textSize = 12,
-                    },
-                },
-                {
-                    type = ui.TYPE.Text,
-                    props = {
-                        text = "Stage: " .. quest.stage,
-                        textColor = util.color.rgb(0.5, 0.5, 0.5),
-                        textSize = 12,
-                    },
+                    content = ui.content {
+                        {
+                            type = ui.TYPE.Text,
+                            props = {
+                                text = dialogueRecord.questName,
+                                textColor = util.color.rgb(1, 1, 1),
+                                textSize = 14,
+                                textAlignH = ui.ALIGNMENT.Start
+                            },
+                        },
+                        {
+                            type = ui.TYPE.Text,
+                            props = {
+                                text = qid,
+                                textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                textSize = 12,
+                                textAlignH = ui.ALIGNMENT.End
+                            },
+                        },
+                        {
+                            type = ui.TYPE.Text,
+                            props = {
+                                text = "Stage: " .. quest.stage,
+                                textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                textSize = 12,
+                                textAlignH = ui.ALIGNMENT.End
+                            },
+                        }
+                    }
                 },
                 {
                     type = ui.TYPE.Text,
                     props = {
                         text = dialogueRecordInfo.text,
                         textColor = util.color.rgb(1, 1, 1),
-                        textSize = 14,
+                        textSize = 12,
+                        wordWrap = true
                     },
                 },
             }
@@ -88,7 +97,7 @@ local function createQuestList()
     end
 
     return ui.create {
-        type = ui.TYPE.Flex,
+        type = ui.TYPE.Container,
         content = ui.content(questlist),
     }
 end

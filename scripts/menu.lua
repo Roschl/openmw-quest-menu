@@ -164,12 +164,11 @@ local function createQuestList()
                             }
                         },
                         {
-                            type = ui.TYPE.Text,
+                            template = I.MWUI.templates.textParagraph,
                             props = {
+                                size = util.vector2(600, 48),
                                 text = dialogueRecordInfo.text,
-                                textColor = util.color.rgb(1, 1, 1),
                                 textSize = 12,
-                                wordWrap = true
                             },
                         }
                     }
@@ -196,7 +195,6 @@ local function createButton(text, callback)
     }
 
     return ui.create {
-        type = ui.TYPE.Container,
         template = I.MWUI.templates.box,
         content = ui.content {
             {
@@ -214,11 +212,10 @@ end
 local function createMenu()
     questMenu = ui.create {
         layer = 'Windows',
-        type = ui.TYPE.Container,
         template = I.MWUI.templates.boxTransparent,
         props = {
             position = util.vector2(10, 10),
-            size = util.vector2(500, 800),
+            relativeSize = util.vector2(.5, .5),
         },
         content = ui.content {
             {

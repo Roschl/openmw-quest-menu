@@ -298,9 +298,6 @@ local function createQuestList()
     }
 end
 
-local doDrag = false
-local lastMousePos = util.vector2(50, 50)
-
 -- Function to create the menu
 local function createMenu()
     questMenu = ui.create {

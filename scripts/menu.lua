@@ -7,6 +7,10 @@ local types = require("openmw.types")
 local core = require("openmw.core")
 local vfs = require('openmw.vfs')
 
+-- Copied some stuff from
+-- OpenMW Skyrim Style Quest Notifications (version 1.24)
+-- by taitechnic
+
 local iconlist = {}
 
 local function parseList(list, isMain)
@@ -293,7 +297,7 @@ local function createQuestList()
     end
 
     return ui.create {
-        type = ui.TYPE.Flex,
+        type = ui.TYPE.Container,
         content = ui.content(questlist),
     }
 end
@@ -305,7 +309,6 @@ local function createMenu()
         template = I.MWUI.templates.boxTransparent,
         props = {
             position = util.vector2(10, 10),
-            relativeSize = util.vector2(.5, .5),
         },
         content = ui.content {
             {
@@ -372,6 +375,9 @@ return {
                 questMenu:destroy()
                 questMenu = nil
             end
+        end,
+        onMouseWheel = function(vertical, horizontal)
+            ui.showMessage('MOPUSE WHEEL')
         end
     }
 }

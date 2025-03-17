@@ -71,6 +71,7 @@ end
 
 local quests = {}
 local questMenu = nil
+local questDetail = nil
 
 local function findDialogueWithStage(dialogueTable, targetStage)
     local filteredDialogue = nil
@@ -94,87 +95,201 @@ local function initQuestMenu()
     loadQuests()
 end
 
-local function createQuestList()
-    local questlist = {}
+local function showQuestDetail(quest)
+    local qid = quest.id:lower()
+    local dialogueRecord = core.dialogue.journal.records[qid]
+    local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
+    local icon = iconpicker(qid)
 
-    for _, quest in pairs(quests) do
-        local qid = quest.id:lower()
-        local dialogueRecord = core.dialogue.journal.records[qid]
-        local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
-        local icon = iconpicker(qid)
+    if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 
-        if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+    if dialogueRecordInfo == nil then
+        dialogueRecordInfo = {
+            text = "No Information Found"
+        }
+    end
 
-        if dialogueRecordInfo == nil then
-            dialogueRecordInfo = {
-                text = "No Information Found"
-            }
-        end
-
-        table.insert(questlist, {
-            type = ui.TYPE.Flex,
+    if (questMenu) then
+        questMenu:destroy()
+        questMenu = ui.create {
+            layer = 'Windows',
+            template = I.MWUI.templates.boxTransparent,
             props = {
-                horizontal = true
+                position = util.vector2(10, 10),
+                relativeSize = util.vector2(.5, .5),
             },
             content = ui.content {
                 {
-                    type = ui.TYPE.Image,
-                    props = {
-                        size = util.vector2(48, 48),
-                        resource = ui.texture { path = icon },
-                        color = util.color.rgb(1, 1, 1),
-                    },
-                },
-                {
                     type = ui.TYPE.Flex,
+                    props = {
+                        horizontal = true
+                    },
                     content = ui.content {
                         {
-                            type = ui.TYPE.Flex,
+                            type = ui.TYPE.Image,
                             props = {
-                                horizontal = true
+                                size = util.vector2(48, 48),
+                                resource = ui.texture { path = icon },
+                                color = util.color.rgb(1, 1, 1),
                             },
-                            content = ui.content {
-                                {
-                                    type = ui.TYPE.Text,
-                                    props = {
-                                        text = dialogueRecord.questName,
-                                        textColor = util.color.rgb(1, 1, 1),
-                                        textSize = 14,
-                                        textAlignH = ui.ALIGNMENT.Start
-                                    },
-                                },
-                                {
-                                    type = ui.TYPE.Text,
-                                    props = {
-                                        text = qid,
-                                        textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                        textSize = 12,
-                                        textAlignH = ui.ALIGNMENT.End
-                                    },
-                                },
-                                {
-                                    type = ui.TYPE.Text,
-                                    props = {
-                                        text = "Stage: " .. quest.stage,
-                                        textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                        textSize = 12,
-                                        textAlignH = ui.ALIGNMENT.End
-                                    },
-                                }
+                            events = {
+                                mouseClick = async:callback(function()
+                                    showQuestDetail(quest)
+                                end)
                             }
                         },
                         {
-                            template = I.MWUI.templates.textParagraph,
-                            props = {
-                                size = util.vector2(600, 48),
-                                text = dialogueRecordInfo.text,
-                                textSize = 12,
-                            },
+                            type = ui.TYPE.Flex,
+                            content = ui.content {
+                                {
+                                    type = ui.TYPE.Flex,
+                                    props = {
+                                        horizontal = true
+                                    },
+                                    content = ui.content {
+                                        {
+                                            type = ui.TYPE.Text,
+                                            props = {
+                                                text = dialogueRecord.questName,
+                                                textColor = util.color.rgb(1, 1, 1),
+                                                textSize = 14,
+                                                textAlignH = ui.ALIGNMENT.Start
+                                            },
+                                        },
+                                        {
+                                            type = ui.TYPE.Text,
+                                            props = {
+                                                text = qid,
+                                                textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                                textSize = 12,
+                                                textAlignH = ui.ALIGNMENT.End
+                                            },
+                                        },
+                                        {
+                                            type = ui.TYPE.Text,
+                                            props = {
+                                                text = "Stage: " .. quest.stage,
+                                                textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                                textSize = 12,
+                                                textAlignH = ui.ALIGNMENT.End
+                                            },
+                                        }
+                                    }
+                                },
+                                {
+                                    template = I.MWUI.templates.textParagraph,
+                                    props = {
+                                        size = util.vector2(600, 48),
+                                        text = dialogueRecordInfo.text,
+                                        textSize = 12,
+                                    },
+                                }
+                            }
                         }
                     }
                 }
             }
-        })
+        }
+    end
+end
+
+local function generateQuestLayout(quest)
+    local qid = quest.id:lower()
+    local dialogueRecord = core.dialogue.journal.records[qid]
+    local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
+    local icon = iconpicker(qid)
+
+    if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+
+    if dialogueRecordInfo == nil then
+        dialogueRecordInfo = {
+            text = "No Information Found"
+        }
+    end
+
+    return {
+        type = ui.TYPE.Flex,
+        props = {
+            horizontal = true
+        },
+        content = ui.content {
+            {
+                type = ui.TYPE.Image,
+                props = {
+                    size = util.vector2(48, 48),
+                    resource = ui.texture { path = icon },
+                    color = util.color.rgb(1, 1, 1),
+                },
+                events = {
+                    mouseClick = async:callback(function()
+                        showQuestDetail(quest)
+                    end)
+                }
+            },
+            {
+                type = ui.TYPE.Flex,
+                content = ui.content {
+                    {
+                        type = ui.TYPE.Flex,
+                        props = {
+                            horizontal = true
+                        },
+                        content = ui.content {
+                            {
+                                type = ui.TYPE.Text,
+                                props = {
+                                    text = dialogueRecord.questName,
+                                    textColor = util.color.rgb(1, 1, 1),
+                                    textSize = 14,
+                                    textAlignH = ui.ALIGNMENT.Start
+                                },
+                            },
+                            {
+                                type = ui.TYPE.Text,
+                                props = {
+                                    text = qid,
+                                    textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                    textSize = 12,
+                                    textAlignH = ui.ALIGNMENT.End
+                                },
+                            },
+                            {
+                                type = ui.TYPE.Text,
+                                props = {
+                                    text = "Stage: " .. quest.stage,
+                                    textColor = util.color.rgb(0.5, 0.5, 0.5),
+                                    textSize = 12,
+                                    textAlignH = ui.ALIGNMENT.End
+                                },
+                            }
+                        }
+                    },
+                    {
+                        template = I.MWUI.templates.textParagraph,
+                        props = {
+                            size = util.vector2(600, 48),
+                            text = dialogueRecordInfo.text,
+                            textSize = 12,
+                        },
+                    }
+                }
+            }
+        }
+    }
+end
+
+local function createQuestList()
+    local questlist = {}
+
+    if questDetail then
+        return ui.create {
+            type = ui.TYPE.Flex,
+            content = ui.content(questDetail),
+        }
+    end
+
+    for _, quest in pairs(quests) do
+        table.insert(questlist, generateQuestLayout(quest))
     end
 
     return ui.create {
@@ -183,30 +298,8 @@ local function createQuestList()
     }
 end
 
-local function createButton(text, callback)
-    local buttonText = {
-        {
-            template = I.MWUI.templates.textNormal,
-            props = {
-                text = text,
-                textSize = 12
-            }
-        }
-    }
-
-    return ui.create {
-        template = I.MWUI.templates.box,
-        content = ui.content {
-            {
-                template = I.MWUI.templates.padding,
-                content = ui.content(buttonText)
-            }
-        },
-        events = {
-            mouseClick = async:callback(callback)
-        }
-    }
-end
+local doDrag = false
+local lastMousePos = util.vector2(50, 50)
 
 -- Function to create the menu
 local function createMenu()
@@ -229,13 +322,31 @@ local function createMenu()
                             textSize = 16,
                         },
                     },
-                    createQuestList(),
-                    createButton('Refresh', function()
-                        ui.showMessage('You have pressed "Button"')
-                        loadQuests()
-                    end)
+                    createQuestList()
                 }
             }
+        },
+        events = {
+            mousePress = async:callback(function(coord, layout)
+                layout.userData.doDrag = true
+                layout.userData.lastMousePos = coord.position
+            end),
+            mouseRelease = async:callback(function(_, layout)
+                layout.userData.doDrag = false
+            end),
+            mouseMove = async:callback(function(coord, layout)
+                if not layout.userData.doDrag then return end
+                local props = layout.props
+                props.position = props.position - (layout.userData.lastMousePos - coord.position)
+                if questMenu then
+                    questMenu:update()
+                end
+                layout.userData.lastMousePos = coord.position
+            end),
+        },
+        userData = {
+            doDrag = false,
+            lastMousePos = nil,
         }
     }
 end

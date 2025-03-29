@@ -131,92 +131,28 @@ local function showQuestDetail(quest)
     end
 end
 
-local function generateQuestLayout(quest)
+local function questListItem(quest)
     local qid = quest.id:lower()
-    local dialogueRecord = core.dialogue.journal.records[qid]
-    local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
     local icon = I.SSQN.getQIcon(qid)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 
-    if dialogueRecordInfo == nil then
-        dialogueRecordInfo = {
-            text = "No Information Found"
-        }
-    end
-
     return {
-        type = ui.TYPE.Flex,
+        type = ui.TYPE.Image,
         props = {
-            horizontal = true
+            size = util.vector2(20, 20),
+            resource = ui.texture { path = icon },
+            color = util.color.rgb(1, 1, 1),
         },
-        content = ui.content {
-            {
-                type = ui.TYPE.Image,
-                props = {
-                    size = util.vector2(48, 48),
-                    resource = ui.texture { path = icon },
-                    color = util.color.rgb(1, 1, 1),
-                },
-                events = {
-                    mouseClick = async:callback(function()
-                        showQuestDetail(quest)
-                    end)
-                }
-            },
-            {
-                type = ui.TYPE.Flex,
-                content = ui.content {
-                    {
-                        type = ui.TYPE.Flex,
-                        props = {
-                            horizontal = true
-                        },
-                        content = ui.content {
-                            {
-                                type = ui.TYPE.Text,
-                                props = {
-                                    text = dialogueRecord.questName,
-                                    textColor = util.color.rgb(1, 1, 1),
-                                    textSize = 14,
-                                    textAlignH = ui.ALIGNMENT.Start
-                                },
-                            },
-                            {
-                                type = ui.TYPE.Text,
-                                props = {
-                                    text = qid,
-                                    textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                    textSize = 12,
-                                    textAlignH = ui.ALIGNMENT.End
-                                },
-                            },
-                            {
-                                type = ui.TYPE.Text,
-                                props = {
-                                    text = "Stage: " .. quest.stage,
-                                    textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                    textSize = 12,
-                                    textAlignH = ui.ALIGNMENT.End
-                                },
-                            }
-                        }
-                    },
-                    {
-                        template = I.MWUI.templates.textParagraph,
-                        props = {
-                            size = util.vector2(600, 48),
-                            text = dialogueRecordInfo.text,
-                            textSize = 12,
-                        },
-                    }
-                }
-            }
+        events = {
+            mouseClick = async:callback(function()
+                showQuestDetail(quest)
+            end)
         }
     }
 end
 
-local function createQuestList()
+local function questList()
     local questlist = {}
 
     if questDetail then
@@ -227,20 +163,38 @@ local function createQuestList()
     end
 
     for _, quest in pairs(quests) do
-        table.insert(questlist, generateQuestLayout(quest))
+        table.insert(questlist, questListItem(quest))
     end
 
     return ui.create {
-        type = ui.TYPE.Container,
+        type = ui.TYPE.Flex,
+        props = {
+            horizontal = true
+        },
         content = ui.content(questlist),
     }
 end
 
--- Function to create the menu
+local function header()
+    return ui.create {
+        type = ui.TYPE.Container,
+        content = ui.content {
+            {
+                template = I.MWUI.templates.textHeader,
+                type = ui.TYPE.Text,
+                props = {
+                    text = "Quests",
+                    textSize = 12,
+                },
+            },
+        }
+    }
+end
+
 local function createMenu()
     questMenu = ui.create {
         layer = 'Windows',
-        template = I.MWUI.templates.boxTransparent,
+        template = I.MWUI.templates.boxSolid,
         props = {
             position = util.vector2(10, 10),
         },
@@ -248,15 +202,8 @@ local function createMenu()
             {
                 type = ui.TYPE.Flex,
                 content = ui.content {
-                    {
-                        template = I.MWUI.templates.textHeader,
-                        type = ui.TYPE.Text,
-                        props = {
-                            text = "Quests",
-                            textSize = 16,
-                        },
-                    },
-                    createQuestList()
+                    header(),
+                    questList()
                 }
             }
         },
@@ -285,8 +232,7 @@ local function createMenu()
     }
 end
 
-local function onQuestUpdate()
-    ui.showMessage('Quest UPDATE')
+local function reloadMenu()
     loadQuests();
 
     if (questMenu) then
@@ -301,7 +247,7 @@ return {
     engineHandlers = {
         onInit = initQuestMenu,
         onLoad = initQuestMenu,
-        onQuestUpdate = onQuestUpdate,
+        onQuestUpdate = reloadMenu,
         onKeyPress = function(key)
             if key.symbol == "x" and questMenu == nil then
                 createMenu()
@@ -309,9 +255,6 @@ return {
                 questMenu:destroy()
                 questMenu = nil
             end
-        end,
-        onMouseWheel = function(vertical, horizontal)
-            ui.showMessage('MOPUSE WHEEL')
         end
     }
 }

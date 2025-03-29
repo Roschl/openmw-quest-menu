@@ -25,7 +25,6 @@ end
 
 local function loadQuests()
     quests = types.Player.quests(self)
-    ui.showMessage('Quests loaded!')
 end
 
 local function initQuestMenu()
@@ -69,11 +68,6 @@ local function showQuestDetail(quest)
                                 size = util.vector2(48, 48),
                                 resource = ui.texture { path = icon },
                                 color = util.color.rgb(1, 1, 1),
-                            },
-                            events = {
-                                mouseClick = async:callback(function()
-                                    showQuestDetail(quest)
-                                end)
                             }
                         },
                         {
@@ -163,7 +157,9 @@ local function questList()
     end
 
     for _, quest in pairs(quests) do
-        table.insert(questlist, questListItem(quest))
+        if quest.finished == false then
+            table.insert(questlist, questListItem(quest))
+        end
     end
 
     return ui.create {

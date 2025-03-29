@@ -7,72 +7,6 @@ local types = require("openmw.types")
 local core = require("openmw.core")
 local vfs = require('openmw.vfs')
 
--- Copied some stuff from
--- OpenMW Skyrim Style Quest Notifications (version 1.24)
--- by taitechnic
-
-local iconlist = {}
-
-local function parseList(list, isMain)
-    local name = ""
-    for k, v in pairs(list) do
-        if not iconlist[k:lower()] or isMain then
-            name = string.sub(v, 2, -1)
-            iconlist[k:lower()] = name
-        end
-    end
-    return list
-end
-
-local M = require("scripts.SSQN.iconlist")
-parseList(M, true)
-
-for i in vfs.pathsWithPrefix("scripts\\SSQN\\iconlists") do
-    if not string.find(i, ".lua$") then
-        print("Error non .lua file present in iconlists.")
-        break
-    end
-    i = string.gsub(i, ".lua", "")
-    i = string.gsub(i, "/", ".")
-    M = require(i)
-    parseList(M, false)
-end
-
-local function iconpicker(qIDString)
-    --checks for full name of index first as requested, then falls back on finding prefix
-    if (iconlist[qIDString] ~= nil) then
-        return iconlist[qIDString:lower()]
-    else
-        local j = 0 --Just to prevent a possible infinite loop
-        repeat
-            j = j + 1
-            local loc = nil
-            local i = 0
-            repeat
-                i = i - 1
-                loc = string.find(qIDString, "_", i)
-            until (loc ~= nil) or (i == -string.len(qIDString))
-            if (loc ~= nil) then
-                qIDString = string.sub(qIDString, 1, loc)
-                if (iconlist[qIDString:lower()] ~= nil) then
-                    break
-                else
-                    qIDString = string.sub(qIDString, 1, loc - 1)
-                end
-            else
-                qIDString = ""
-                break
-            end
-        until (iconlist[qIDString:lower()] ~= nil) or (qIDString == "") or (j == 10)
-
-        if (iconlist[qIDString:lower()] ~= nil) then
-            return iconlist[qIDString:lower()]
-        else
-            return "Icons\\SSQN\\DEFAULT.dds" --Default in case no icon is found
-        end
-    end
-end
-
 local quests = {}
 local questMenu = nil
 local questDetail = nil
@@ -103,7 +37,7 @@ local function showQuestDetail(quest)
     local qid = quest.id:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
-    local icon = iconpicker(qid)
+    local icon = I.SSQN.getQIcon(qid)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 
@@ -201,7 +135,7 @@ local function generateQuestLayout(quest)
     local qid = quest.id:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
-    local icon = iconpicker(qid)
+    local icon = I.SSQN.getQIcon(qid)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 

@@ -65,7 +65,7 @@ local function showQuestDetail(quest)
                         {
                             type = ui.TYPE.Image,
                             props = {
-                                size = util.vector2(48, 48),
+                                size = util.vector2(30, 30),
                                 resource = ui.texture { path = icon },
                                 color = util.color.rgb(1, 1, 1),
                             }
@@ -87,24 +87,6 @@ local function showQuestDetail(quest)
                                                 textSize = 14,
                                                 textAlignH = ui.ALIGNMENT.Start
                                             },
-                                        },
-                                        {
-                                            type = ui.TYPE.Text,
-                                            props = {
-                                                text = qid,
-                                                textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                                textSize = 12,
-                                                textAlignH = ui.ALIGNMENT.End
-                                            },
-                                        },
-                                        {
-                                            type = ui.TYPE.Text,
-                                            props = {
-                                                text = "Stage: " .. quest.stage,
-                                                textColor = util.color.rgb(0.5, 0.5, 0.5),
-                                                textSize = 12,
-                                                textAlignH = ui.ALIGNMENT.End
-                                            },
                                         }
                                     }
                                 },
@@ -120,6 +102,28 @@ local function showQuestDetail(quest)
                         }
                     }
                 }
+            },
+            events = {
+                mousePress = async:callback(function(coord, layout)
+                    layout.userData.doDrag = true
+                    layout.userData.lastMousePos = coord.position
+                end),
+                mouseRelease = async:callback(function(_, layout)
+                    layout.userData.doDrag = false
+                end),
+                mouseMove = async:callback(function(coord, layout)
+                    if not layout.userData.doDrag then return end
+                    local props = layout.props
+                    props.position = props.position - (layout.userData.lastMousePos - coord.position)
+                    if questMenu then
+                        questMenu:update()
+                    end
+                    layout.userData.lastMousePos = coord.position
+                end),
+            },
+            userData = {
+                doDrag = false,
+                lastMousePos = nil,
             }
         }
     end
@@ -142,7 +146,7 @@ local function questListItem(quest)
             mouseClick = async:callback(function()
                 showQuestDetail(quest)
             end)
-        }
+        },
     }
 end
 
@@ -202,28 +206,6 @@ local function createMenu()
                     questList()
                 }
             }
-        },
-        events = {
-            mousePress = async:callback(function(coord, layout)
-                layout.userData.doDrag = true
-                layout.userData.lastMousePos = coord.position
-            end),
-            mouseRelease = async:callback(function(_, layout)
-                layout.userData.doDrag = false
-            end),
-            mouseMove = async:callback(function(coord, layout)
-                if not layout.userData.doDrag then return end
-                local props = layout.props
-                props.position = props.position - (layout.userData.lastMousePos - coord.position)
-                if questMenu then
-                    questMenu:update()
-                end
-                layout.userData.lastMousePos = coord.position
-            end),
-        },
-        userData = {
-            doDrag = false,
-            lastMousePos = nil,
         }
     }
 end

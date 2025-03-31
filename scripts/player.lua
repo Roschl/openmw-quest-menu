@@ -28,7 +28,6 @@ local function loadQuests()
 end
 
 local function initQuestMenu()
-    ui.showMessage('INIT QUEST MENU')
     loadQuests()
 end
 

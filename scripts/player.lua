@@ -10,7 +10,16 @@ local vfs = require('openmw.vfs')
 
 local quests = {}
 local questMenu = nil
-local questDetail = nil
+
+local currentView = "list" -- Can be "list" or "detail"
+local selectedQuest = nil
+
+local renderMenu
+local setView = function(view, quest)
+    currentView = view
+    selectedQuest = quest or nil
+    renderMenu()
+end
 
 I.Settings.registerPage {
     key = 'OpenMWQuestStatusMenuPage',
@@ -55,10 +64,6 @@ local function loadQuests()
     quests = types.Player.quests(self)
 end
 
-local function initQuestMenu()
-    loadQuests()
-end
-
 local function showQuestDetail(quest)
     local qid = quest.id:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
@@ -74,9 +79,7 @@ local function showQuestDetail(quest)
     end
 
     if (questMenu) then
-        questMenu:destroy()
-        questMenu = ui.create {
-            layer = 'Windows',
+        return {
             template = I.MWUI.templates.boxTransparent,
             props = {
                 position = util.vector2(10, 10),
@@ -120,7 +123,7 @@ local function showQuestDetail(quest)
                                 {
                                     template = I.MWUI.templates.textParagraph,
                                     props = {
-                                        size = util.vector2(600, 48),
+                                        size = util.vector2(600, 10),
                                         text = dialogueRecordInfo.text,
                                         textSize = 12,
                                     },
@@ -129,28 +132,6 @@ local function showQuestDetail(quest)
                         }
                     }
                 }
-            },
-            events = {
-                mousePress = async:callback(function(coord, layout)
-                    layout.userData.doDrag = true
-                    layout.userData.lastMousePos = coord.position
-                end),
-                mouseRelease = async:callback(function(_, layout)
-                    layout.userData.doDrag = false
-                end),
-                mouseMove = async:callback(function(coord, layout)
-                    if not layout.userData.doDrag then return end
-                    local props = layout.props
-                    props.position = props.position - (layout.userData.lastMousePos - coord.position)
-                    if questMenu then
-                        questMenu:update()
-                    end
-                    layout.userData.lastMousePos = coord.position
-                end),
-            },
-            userData = {
-                doDrag = false,
-                lastMousePos = nil,
             }
         }
     end
@@ -171,7 +152,7 @@ local function questListItem(quest)
         },
         events = {
             mouseClick = async:callback(function()
-                showQuestDetail(quest)
+                setView("detail", quest)
             end)
         },
     }
@@ -179,13 +160,6 @@ end
 
 local function questList()
     local questlist = {}
-
-    if questDetail then
-        return ui.create {
-            type = ui.TYPE.Flex,
-            content = ui.content(questDetail),
-        }
-    end
 
     for _, quest in pairs(quests) do
         if quest.finished == false then
@@ -218,7 +192,42 @@ local function header()
     }
 end
 
-local function createMenu()
+renderMenu = function()
+    local content = {}
+
+    if currentView == "list" then
+        table.insert(content, header())
+        table.insert(content, questList())
+    elseif currentView == "detail" and selectedQuest then
+        table.insert(content, showQuestDetail(selectedQuest))
+        table.insert(content, {
+            type = ui.TYPE.Text,
+            template = I.MWUI.templates.textNormal,
+            props = {
+                text = "Back",
+                textSize = 12,
+            },
+            events = {
+                mouseClick = async:callback(function()
+                    setView("list")
+                end)
+            }
+        })
+    else
+        table.insert(content, {
+            type = ui.TYPE.Text,
+            template = I.MWUI.templates.textNormal,
+            props = {
+                text = "THERE IS NO INFORMATION",
+                textSize = 12,
+            }
+        })
+    end
+
+    if questMenu then
+        questMenu:destroy()
+    end
+
     questMenu = ui.create {
         layer = 'Windows',
         template = I.MWUI.templates.boxSolid,
@@ -228,37 +237,36 @@ local function createMenu()
         content = ui.content {
             {
                 type = ui.TYPE.Flex,
-                content = ui.content {
-                    header(),
-                    questList()
-                }
+                content = ui.content(content)
             }
         }
     }
 end
 
-local function reloadMenu()
+local function onQuestUpdate()
     loadQuests();
 
-    if (questMenu) then
-        questMenu:destroy()
-        questMenu = nil
+    if (currentView == "detail" and selectedQuest) then
+        setView("detail", selectedQuest)
+    else
+        setView("list");
+        return;
     end
-
-    createMenu();
 end
 
 return {
     engineHandlers = {
-        onInit = initQuestMenu,
-        onLoad = initQuestMenu,
-        onQuestUpdate = reloadMenu,
+        onInit = loadQuests,
+        onLoad = loadQuests,
+        onQuestUpdate = onQuestUpdate,
         onKeyPress = function(key)
             if key.symbol == playerSettings:get('OpenMenu') and questMenu == nil then
-                createMenu()
+                renderMenu()
             elseif key.symbol == playerSettings:get('OpenMenu') and questMenu then
                 questMenu:destroy()
                 questMenu = nil
+                selectedQuest = nil
+                currentView = "list"
             end
         end
     }

@@ -5,11 +5,39 @@ local I = require('openmw.interfaces')
 local async = require('openmw.async')
 local types = require("openmw.types")
 local core = require("openmw.core")
+local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
 
 local quests = {}
 local questMenu = nil
 local questDetail = nil
+
+I.Settings.registerPage {
+    key = 'OpenMWQuestStatusMenuPage',
+    l10n = 'OpenMWQuestStatusMenu',
+    name = 'OpenMW Quest Status Menu',
+    description = 'Settings for the quest status menu.',
+}
+
+I.Settings.registerGroup {
+    key = 'SettingsPlayerOpenMWQuestStatusMenu',
+    page = 'OpenMWQuestStatusMenuPage',
+    l10n = 'OpenMWQuestStatusMenu',
+    name = 'Controls',
+    permanentStorage = true,
+    settings = {
+        {
+            key = 'OpenMenu',
+            renderer = 'textLine',
+            name = 'Open Menu',
+            description = 'Key to open menu.',
+            default = 'x',
+        },
+    },
+}
+
+local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenu')
+
 
 local function findDialogueWithStage(dialogueTable, targetStage)
     local filteredDialogue = nil
@@ -226,9 +254,9 @@ return {
         onLoad = initQuestMenu,
         onQuestUpdate = reloadMenu,
         onKeyPress = function(key)
-            if key.symbol == "x" and questMenu == nil then
+            if key.symbol == playerSettings:get('OpenMenu') and questMenu == nil then
                 createMenu()
-            elseif key.symbol == "x" and questMenu then
+            elseif key.symbol == playerSettings:get('OpenMenu') and questMenu then
                 questMenu:destroy()
                 questMenu = nil
             end

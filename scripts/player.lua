@@ -59,7 +59,7 @@ local function renderButton(text, onClick)
                 props = {
                     text = text,
                     textColor = util.color.hex("cccccc"),
-                    textSize = playerCustomizationSettings:get('TextSize')
+                    textSize = playerCustomizationSettings:get('ButtonSize')
                 },
                 events = {
                     mouseClick = onClick
@@ -118,9 +118,8 @@ local function showQuestDetail(quest)
                                 {
                                     type = ui.TYPE.Image,
                                     props = {
-                                        size = util.vector2(30, 30),
+                                        size = util.vector2(playerCustomizationSettings:get('IconSize'), playerCustomizationSettings:get('IconSize')),
                                         resource = ui.texture { path = icon },
-                                        color = util.color.rgb(1, 1, 1),
                                     }
                                 },
                                 {
@@ -191,7 +190,8 @@ local function questListItem(quest)
     return {
         type = ui.TYPE.Image,
         props = {
-            size = util.vector2(20, 20),
+            size = util.vector2(playerCustomizationSettings:get('IconSizeList'),
+                playerCustomizationSettings:get('IconSizeList')),
             resource = ui.texture { path = icon },
             color = util.color.rgb(1, 1, 1),
         },
@@ -218,7 +218,7 @@ local function questList()
         end
     end
 
-    return ui.create {
+    return {
         type = ui.TYPE.Flex,
         props = {
             horizontal = true
@@ -228,7 +228,7 @@ local function questList()
 end
 
 local function header()
-    return ui.create {
+    return {
         type = ui.TYPE.Container,
         content = ui.content {
             {

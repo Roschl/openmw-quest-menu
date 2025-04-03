@@ -9,11 +9,13 @@ local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
 
 local quests = {}
+local disabledQuests = {}
 local questMenu = nil
 
 local currentView = "list" -- Can be "list" or "detail"
 local selectedQuest = nil
 
+local mode = "Enabled" -- Can be "Disabled" or "Enabled"
 local showFinished = false
 
 local renderMenu
@@ -25,6 +27,27 @@ end
 
 local playerControlSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuControls')
 local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuCustomization')
+
+local function hasValue(tab, val)
+    for _, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function removeValue(tab, val)
+    local newList = {};
+    for _, value in ipairs(tab) do
+        if value ~= val then
+            table.insert(newList, value)
+        end
+    end
+
+    disabledQuests = newList
+end
 
 local function renderButton(text, onClick)
     return {
@@ -66,6 +89,7 @@ local function showQuestDetail(quest)
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
     local icon = I.SSQN.getQIcon(qid)
+    local isDisabled = hasValue(disabledQuests, qid)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 
@@ -77,56 +101,80 @@ local function showQuestDetail(quest)
 
     if (questMenu) then
         return {
-            template = I.MWUI.templates.boxTransparent,
-            props = {
-                position = util.vector2(10, 10),
-                relativeSize = util.vector2(.5, .5),
-            },
+            type = ui.TYPE.Flex,
             content = ui.content {
+                {
+                    template = I.MWUI.templates.boxTransparent,
+                    props = {
+                        position = util.vector2(10, 10),
+                    },
+                    content = ui.content {
+                        {
+                            type = ui.TYPE.Flex,
+                            props = {
+                                horizontal = true
+                            },
+                            content = ui.content {
+                                {
+                                    type = ui.TYPE.Image,
+                                    props = {
+                                        size = util.vector2(30, 30),
+                                        resource = ui.texture { path = icon },
+                                        color = util.color.rgb(1, 1, 1),
+                                    }
+                                },
+                                {
+                                    type = ui.TYPE.Flex,
+                                    content = ui.content {
+                                        {
+                                            type = ui.TYPE.Flex,
+                                            props = {
+                                                horizontal = true
+                                            },
+                                            content = ui.content {
+                                                {
+                                                    type = ui.TYPE.Text,
+                                                    props = {
+                                                        text = dialogueRecord.questName,
+                                                        textColor = util.color.rgb(1, 1, 1),
+                                                        textSize = playerCustomizationSettings:get('HeadlineSize'),
+                                                        textAlignH = ui.ALIGNMENT.Start
+                                                    },
+                                                }
+                                            }
+                                        },
+                                        {
+                                            template = I.MWUI.templates.textParagraph,
+                                            props = {
+                                                size = util.vector2(600, 10),
+                                                text = dialogueRecordInfo.text,
+                                                textSize = playerCustomizationSettings:get('TextSize'),
+                                            },
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 {
                     type = ui.TYPE.Flex,
                     props = {
                         horizontal = true
                     },
                     content = ui.content {
-                        {
-                            type = ui.TYPE.Image,
-                            props = {
-                                size = util.vector2(30, 30),
-                                resource = ui.texture { path = icon },
-                                color = util.color.rgb(1, 1, 1),
-                            }
-                        },
-                        {
-                            type = ui.TYPE.Flex,
-                            content = ui.content {
-                                {
-                                    type = ui.TYPE.Flex,
-                                    props = {
-                                        horizontal = true
-                                    },
-                                    content = ui.content {
-                                        {
-                                            type = ui.TYPE.Text,
-                                            props = {
-                                                text = dialogueRecord.questName,
-                                                textColor = util.color.rgb(1, 1, 1),
-                                                textSize = playerCustomizationSettings:get('HeadlineSize'),
-                                                textAlignH = ui.ALIGNMENT.Start
-                                            },
-                                        }
-                                    }
-                                },
-                                {
-                                    template = I.MWUI.templates.textParagraph,
-                                    props = {
-                                        size = util.vector2(600, 10),
-                                        text = dialogueRecordInfo.text,
-                                        textSize = playerCustomizationSettings:get('TextSize'),
-                                    },
-                                }
-                            }
-                        }
+                        renderButton("Back", async:callback(function()
+                            setView("list")
+                        end)),
+                        renderButton(isDisabled == true and "Enable" or "Disable", async:callback(function()
+                            if (isDisabled) then
+                                removeValue(disabledQuests, qid)
+                                setView("detail", quest)
+                            else
+                                table.insert(disabledQuests, qid)
+                                setView("detail", quest)
+                            end
+                        end))
                     }
                 }
             }
@@ -159,8 +207,14 @@ local function questList()
     local questlist = {}
 
     for _, quest in pairs(quests) do
-        if quest.finished == showFinished then
-            table.insert(questlist, questListItem(quest))
+        if mode == "Disabled" then
+            if quest.finished == showFinished and hasValue(disabledQuests, quest.id) then
+                table.insert(questlist, questListItem(quest))
+            end
+        else
+            if quest.finished == showFinished and not hasValue(disabledQuests, quest.id) then
+                table.insert(questlist, questListItem(quest))
+            end
         end
     end
 
@@ -205,16 +259,28 @@ renderMenu = function()
                 }
             }
         })
-        --table.insert(content, questList())header()
-        table.insert(content, renderButton(showFinished and "Active" or "Finished", async:callback(function()
-            showFinished = not showFinished
-            setView("list")
-        end)))
+        table.insert(content, {
+            type = ui.TYPE.Flex,
+            props = {
+                horizontal = true
+            },
+            content = ui.content {
+                renderButton(showFinished and "Finished" or "Active", async:callback(function()
+                    showFinished = not showFinished
+                    setView("list")
+                end)),
+                renderButton(mode, async:callback(function()
+                    if (mode == "Enabled") then
+                        mode = "Disabled"
+                    else
+                        mode = "Enabled"
+                    end
+                    setView("list")
+                end)),
+            }
+        })
     elseif currentView == "detail" and selectedQuest then
         table.insert(content, showQuestDetail(selectedQuest))
-        table.insert(content, renderButton("Back", async:callback(function()
-            setView("list")
-        end)))
     else
         table.insert(content, {
             type = ui.TYPE.Text,
@@ -259,10 +325,28 @@ local function onQuestUpdate()
     end
 end
 
+local function onSave()
+    return {
+        disabledQuests = disabledQuests,
+    }
+end
+
+local function onLoad(data)
+    loadQuests()
+
+    if not data or not data.disabledQuests then
+        disabledQuests = {}
+        return
+    end
+
+    disabledQuests = data.disabledQuests
+end
+
 return {
     engineHandlers = {
         onInit = loadQuests,
-        onLoad = loadQuests,
+        onSave = onSave,
+        onLoad = onLoad,
         onQuestUpdate = onQuestUpdate,
         onKeyPress = function(key)
             if key.symbol == playerControlSettings:get('OpenMenu') and questMenu == nil then

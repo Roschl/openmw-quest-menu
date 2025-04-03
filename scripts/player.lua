@@ -29,7 +29,7 @@ I.Settings.registerPage {
 }
 
 I.Settings.registerGroup {
-    key = 'SettingsPlayerOpenMWQuestStatusMenu',
+    key = 'SettingsPlayerOpenMWQuestStatusMenuControls',
     page = 'OpenMWQuestStatusMenuPage',
     l10n = 'OpenMWQuestStatusMenu',
     name = 'Controls',
@@ -45,7 +45,32 @@ I.Settings.registerGroup {
     },
 }
 
-local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenu')
+I.Settings.registerGroup {
+    key = 'SettingsPlayerOpenMWQuestStatusMenuCustomization',
+    page = 'OpenMWQuestStatusMenuPage',
+    l10n = 'OpenMWQuestStatusMenu',
+    name = 'Customization',
+    permanentStorage = true,
+    settings = {
+        {
+            key = 'HeadlineSize',
+            renderer = 'number',
+            name = 'Headline Size',
+            description = 'Sets the size of the Quest names.',
+            default = 14,
+        },
+        {
+            key = 'TextSize',
+            renderer = 'number',
+            name = 'Text Size',
+            description = 'Sets the size of the Quest description and "back" button.',
+            default = 12,
+        },
+    },
+}
+
+local playerControlSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuControls')
+local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuCustomization')
 
 
 local function findDialogueWithStage(dialogueTable, targetStage)
@@ -114,7 +139,7 @@ local function showQuestDetail(quest)
                                             props = {
                                                 text = dialogueRecord.questName,
                                                 textColor = util.color.rgb(1, 1, 1),
-                                                textSize = 14,
+                                                textSize = playerCustomizationSettings:get('HeadlineSize'),
                                                 textAlignH = ui.ALIGNMENT.Start
                                             },
                                         }
@@ -125,7 +150,7 @@ local function showQuestDetail(quest)
                                     props = {
                                         size = util.vector2(600, 10),
                                         text = dialogueRecordInfo.text,
-                                        textSize = 12,
+                                        textSize = playerCustomizationSettings:get('TextSize'),
                                     },
                                 }
                             }
@@ -185,7 +210,7 @@ local function header()
                 type = ui.TYPE.Text,
                 props = {
                     text = "Quests",
-                    textSize = 12,
+                    textSize = playerCustomizationSettings:get('TextSize')
                 },
             },
         }
@@ -205,7 +230,7 @@ renderMenu = function()
             template = I.MWUI.templates.textNormal,
             props = {
                 text = "Back",
-                textSize = 12,
+                textSize = playerCustomizationSettings:get('TextSize')
             },
             events = {
                 mouseClick = async:callback(function()
@@ -219,7 +244,7 @@ renderMenu = function()
             template = I.MWUI.templates.textNormal,
             props = {
                 text = "THERE IS NO INFORMATION",
-                textSize = 12,
+                textSize = playerCustomizationSettings:get('TextSize')
             }
         })
     end
@@ -260,9 +285,9 @@ return {
         onLoad = loadQuests,
         onQuestUpdate = onQuestUpdate,
         onKeyPress = function(key)
-            if key.symbol == playerSettings:get('OpenMenu') and questMenu == nil then
+            if key.symbol == playerControlSettings:get('OpenMenu') and questMenu == nil then
                 renderMenu()
-            elseif key.symbol == playerSettings:get('OpenMenu') and questMenu then
+            elseif key.symbol == playerControlSettings:get('OpenMenu') and questMenu then
                 questMenu:destroy()
                 questMenu = nil
                 selectedQuest = nil

@@ -251,9 +251,9 @@ end
 local function onQuestUpdate()
     loadQuests();
 
-    if (currentView == "detail" and selectedQuest) then
+    if (questMenu and currentView == "detail" and selectedQuest) then
         setView("detail", selectedQuest)
-    elseif (currentView == "list") then
+    elseif (questMenu and currentView == "list") then
         setView("list");
         return;
     end

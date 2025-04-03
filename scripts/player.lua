@@ -14,6 +14,8 @@ local questMenu = nil
 local currentView = "list" -- Can be "list" or "detail"
 local selectedQuest = nil
 
+local showFinished = false
+
 local renderMenu
 local setView = function(view, quest)
     currentView = view
@@ -21,57 +23,27 @@ local setView = function(view, quest)
     renderMenu()
 end
 
-I.Settings.registerPage {
-    key = 'OpenMWQuestStatusMenuPage',
-    l10n = 'OpenMWQuestStatusMenu',
-    name = 'OpenMW Quest Status Menu',
-    description = 'Settings for the quest status menu.',
-}
-
-I.Settings.registerGroup {
-    key = 'SettingsPlayerOpenMWQuestStatusMenuControls',
-    page = 'OpenMWQuestStatusMenuPage',
-    l10n = 'OpenMWQuestStatusMenu',
-    name = 'Controls',
-    permanentStorage = true,
-    settings = {
-        {
-            key = 'OpenMenu',
-            renderer = 'textLine',
-            name = 'Open Menu',
-            description = 'Key to open menu.',
-            default = 'x',
-        },
-    },
-}
-
-I.Settings.registerGroup {
-    key = 'SettingsPlayerOpenMWQuestStatusMenuCustomization',
-    page = 'OpenMWQuestStatusMenuPage',
-    l10n = 'OpenMWQuestStatusMenu',
-    name = 'Customization',
-    permanentStorage = true,
-    settings = {
-        {
-            key = 'HeadlineSize',
-            renderer = 'number',
-            name = 'Headline Size',
-            description = 'Sets the size of the Quest names.',
-            default = 14,
-        },
-        {
-            key = 'TextSize',
-            renderer = 'number',
-            name = 'Text Size',
-            description = 'Sets the size of the Quest description and "back" button.',
-            default = 12,
-        },
-    },
-}
-
 local playerControlSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuControls')
 local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuCustomization')
 
+local function renderButton(text, onClick)
+    return {
+        template = I.MWUI.templates.boxTransparent,
+        content = ui.content {
+            {
+                type = ui.TYPE.Text,
+                template = I.MWUI.templates.textNormal,
+                props = {
+                    text = text,
+                    textColor = util.color.hex("cccccc"),
+                    textSize = playerCustomizationSettings:get('TextSize')
+                },
+                events = {
+                    mouseClick = onClick
+                }
+            } }
+    }
+end
 
 local function findDialogueWithStage(dialogueTable, targetStage)
     local filteredDialogue = nil
@@ -187,7 +159,7 @@ local function questList()
     local questlist = {}
 
     for _, quest in pairs(quests) do
-        if quest.finished == false then
+        if quest.finished == showFinished then
             table.insert(questlist, questListItem(quest))
         end
     end
@@ -221,23 +193,28 @@ renderMenu = function()
     local content = {}
 
     if currentView == "list" then
-        table.insert(content, header())
-        table.insert(content, questList())
-    elseif currentView == "detail" and selectedQuest then
-        table.insert(content, showQuestDetail(selectedQuest))
         table.insert(content, {
-            type = ui.TYPE.Text,
-            template = I.MWUI.templates.textNormal,
-            props = {
-                text = "Back",
-                textSize = playerCustomizationSettings:get('TextSize')
-            },
-            events = {
-                mouseClick = async:callback(function()
-                    setView("list")
-                end)
+            template = I.MWUI.templates.boxTransparent,
+            content = ui.content {
+                {
+                    type = ui.TYPE.Flex,
+                    content = ui.content {
+                        header(),
+                        questList()
+                    }
+                }
             }
         })
+        --table.insert(content, questList())header()
+        table.insert(content, renderButton(showFinished and "Active" or "Finished", async:callback(function()
+            showFinished = not showFinished
+            setView("list")
+        end)))
+    elseif currentView == "detail" and selectedQuest then
+        table.insert(content, showQuestDetail(selectedQuest))
+        table.insert(content, renderButton("Back", async:callback(function()
+            setView("list")
+        end)))
     else
         table.insert(content, {
             type = ui.TYPE.Text,
@@ -262,6 +239,9 @@ renderMenu = function()
         content = ui.content {
             {
                 type = ui.TYPE.Flex,
+                props = {
+                    relativeSize = util.vector2(.5, .5)
+                },
                 content = ui.content(content)
             }
         }

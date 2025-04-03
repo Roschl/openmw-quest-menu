@@ -9,13 +9,13 @@ local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
 
 local quests = {}
-local disabledQuests = {}
+local hiddenQuests = {}
 local questMenu = nil
 
 local currentView = "list" -- Can be "list" or "detail"
 local selectedQuest = nil
 
-local mode = "Enabled" -- Can be "Disabled" or "Enabled"
+local mode = "Visible" -- Can be "Hidden" or "Visible"
 local showFinished = false
 
 local renderMenu
@@ -46,7 +46,7 @@ local function removeValue(tab, val)
         end
     end
 
-    disabledQuests = newList
+    hiddenQuests = newList
 end
 
 local function renderButton(text, onClick)
@@ -89,7 +89,7 @@ local function showQuestDetail(quest)
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
     local icon = I.SSQN.getQIcon(qid)
-    local isDisabled = hasValue(disabledQuests, qid)
+    local isHidden = hasValue(hiddenQuests, qid)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
 
@@ -165,12 +165,12 @@ local function showQuestDetail(quest)
                         renderButton("Back", async:callback(function()
                             setView("list")
                         end)),
-                        renderButton(isDisabled == true and "Enable" or "Disable", async:callback(function()
-                            if (isDisabled) then
-                                removeValue(disabledQuests, qid)
+                        renderButton(isHidden == true and "Show" or "Hide", async:callback(function()
+                            if (isHidden) then
+                                removeValue(hiddenQuests, qid)
                                 setView("detail", quest)
                             else
-                                table.insert(disabledQuests, qid)
+                                table.insert(hiddenQuests, qid)
                                 setView("detail", quest)
                             end
                         end))
@@ -207,12 +207,12 @@ local function questList()
     local questlist = {}
 
     for _, quest in pairs(quests) do
-        if mode == "Disabled" then
-            if quest.finished == showFinished and hasValue(disabledQuests, quest.id) then
+        if mode == "Hidden" then
+            if quest.finished == showFinished and hasValue(hiddenQuests, quest.id) then
                 table.insert(questlist, questListItem(quest))
             end
         else
-            if quest.finished == showFinished and not hasValue(disabledQuests, quest.id) then
+            if quest.finished == showFinished and not hasValue(hiddenQuests, quest.id) then
                 table.insert(questlist, questListItem(quest))
             end
         end
@@ -270,10 +270,10 @@ renderMenu = function()
                     setView("list")
                 end)),
                 renderButton(mode, async:callback(function()
-                    if (mode == "Enabled") then
-                        mode = "Disabled"
+                    if (mode == "Visible") then
+                        mode = "Hidden"
                     else
-                        mode = "Enabled"
+                        mode = "Visible"
                     end
                     setView("list")
                 end)),
@@ -327,19 +327,19 @@ end
 
 local function onSave()
     return {
-        disabledQuests = disabledQuests,
+        hiddenQuests = hiddenQuests,
     }
 end
 
 local function onLoad(data)
     loadQuests()
 
-    if not data or not data.disabledQuests then
-        disabledQuests = {}
+    if not data or not data.hiddenQuests then
+        hiddenQuests = {}
         return
     end
 
-    disabledQuests = data.disabledQuests
+    hiddenQuests = data.hiddenQuests
 end
 
 return {

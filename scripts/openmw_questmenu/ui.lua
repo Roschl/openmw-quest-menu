@@ -120,7 +120,7 @@ local function createQuestList(quests)
     }
 end
 
-local function createQuestMenu(quests)
+local function createQuestMenu(page, quests)
     local menu_block_path = "Textures\\menu_head_block_middle.dds"
     local topButtonHeight = 23
 
@@ -232,7 +232,12 @@ local function createQuestMenu(quests)
             }
         },
         events = {
-            mousePress = async:callback(function(button)
+            mousePress = async:callback(function()
+                if questMenu and page > 0 then
+                    questMenu:destroy()
+                    questMenu = nil
+                    createQuestMenu(page - 1, quests)
+                end
             end)
         }
     }
@@ -260,8 +265,12 @@ local function createQuestMenu(quests)
             }
         },
         events = {
-            mousePress = async:callback(function(button)
-
+            mousePress = async:callback(function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    createQuestMenu(page + 1, quests)
+                end
             end)
         }
     }
@@ -272,7 +281,7 @@ local function createQuestMenu(quests)
         props = {
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
-            text = "TEXT PAGE",
+            text = tostring(page),
             textSize = text_size + 4
         }
     }
@@ -344,7 +353,7 @@ local function createQuestMenu(quests)
                     questMenu:destroy()
                     questMenu = nil
                     questMode = "FINISHED"
-                    createQuestMenu(getQuests())
+                    createQuestMenu(page, getQuests())
                 end
             end)
         }
@@ -523,7 +532,7 @@ local function onKeyPress(key)
     if key.symbol == playerSettings:get('OpenMenuNew') then
         if questMenu == nil then
             I.UI.setMode('Interface', { windows = {} })
-            createQuestMenu(getQuests())
+            createQuestMenu(0, getQuests())
         else
             I.UI.removeMode('Interface')
             questMenu:destroy()

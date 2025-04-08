@@ -1,3 +1,3 @@
-MENU: scripts/menuSettings.lua
-PLAYER: scripts/player.lua
-PLAYER: scripts/ui.lua
+MENU: scripts/openmw_questmenu/menuSettings.lua
+PLAYER: scripts/openmw_questmenu/player.lua
+PLAYER: scripts/openmw_questmenu/ui.lua

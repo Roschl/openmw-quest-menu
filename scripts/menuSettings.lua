@@ -21,6 +21,13 @@ I.Settings.registerGroup {
             description = 'Key to open menu.',
             default = 'x',
         },
+        {
+            key = 'OpenMenuNew',
+            renderer = 'textLine',
+            name = 'Open Menu',
+            description = 'Key to open new menu.',
+            default = 'y',
+        },
     },
 }
 

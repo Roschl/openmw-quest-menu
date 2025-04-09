@@ -5,9 +5,10 @@ local input = require('openmw.input')
 local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
 local types = require("openmw.types")
-local async = require('openmw.async')
 local vfs = require('openmw.vfs')
 local core = require("openmw.core")
+
+local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
 local v2 = util.vector2
 
@@ -208,72 +209,21 @@ local function createQuestMenu(page, quests)
         content = ui.content({ questList })
     }
 
-    local buttonBack = {
-        type = ui.TYPE.Widget,
-        template = I.MWUI.templates.bordersThick,
-        props = {
-            name = "buttonBack",
-            anchor = v2(0, .5),
-            relativePosition = v2(0, .5),
-            size = v2(80, topButtonHeight),
-            visible = true,
-            propagateEvents = false
-        },
-        content = ui.content {
-            {
-                template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
-                props = {
-                    anchor = v2(.5, .5),
-                    relativePosition = v2(.5, .5),
-                    text = "Back",
-                    textSize = text_size + 1,
-                }
-            }
-        },
-        events = {
-            mousePress = async:callback(function()
-                if questMenu and page > 0 then
-                    questMenu:destroy()
-                    questMenu = nil
-                    createQuestMenu(page - 1, quests)
-                end
-            end)
-        }
-    }
+    local buttonBack = UIComponents.createButton("Back", 80, topButtonHeight, v2(0, .5), v2(0, .5), function()
+        if questMenu and page > 0 then
+            questMenu:destroy()
+            questMenu = nil
+            createQuestMenu(page - 1, quests)
+        end
+    end)
 
-    local buttonForward = {
-        type = ui.TYPE.Widget,
-        template = I.MWUI.templates.bordersThick,
-        props = {
-            anchor = v2(1, .5),
-            relativePosition = v2(1, .5),
-            size = v2(80, topButtonHeight),
-            visible = true,
-            propagateEvents = false
-        },
-        content = ui.content {
-            {
-                template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
-                props = {
-                    anchor = v2(.5, .5),
-                    relativePosition = v2(.5, .5),
-                    text = "Next",
-                    textSize = text_size + 1,
-                }
-            }
-        },
-        events = {
-            mousePress = async:callback(function()
-                if questMenu then
-                    questMenu:destroy()
-                    questMenu = nil
-                    createQuestMenu(page + 1, quests)
-                end
-            end)
-        }
-    }
+    local buttonForward = UIComponents.createButton("Next", 80, topButtonHeight, v2(1, .5), v2(1, .5), function()
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            createQuestMenu(page + 1, quests)
+        end
+    end)
 
     local pageText = {
         template = I.MWUI.templates.textNormal,
@@ -299,98 +249,26 @@ local function createQuestMenu(page, quests)
         )
     }
 
-    local buttonHidden = {
-        type = ui.TYPE.Widget,
-        template = I.MWUI.templates.bordersThick,
-        props = {
-            name = "buttonAll",
-            anchor = v2(0, .5),
-            size = v2(100, topButtonHeight),
-            visible = true
-        },
-        content = ui.content {
-            {
-                template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
-                props = {
-                    anchor = v2(.5, .5),
-                    relativePosition = v2(.5, .5),
-                    text = "Hidden",
-                    textSize = text_size + 1
-                }
-            }
-        },
-        events = {
-            mousePress = async:callback(function(button)
-            end)
-        }
-    }
+    local buttonHidden = UIComponents.createButton("Hidden", 100, topButtonHeight, nil, v2(0, .5), function()
+    end)
 
-    local buttonFinished = {
-        type = ui.TYPE.Widget,
-        template = I.MWUI.templates.bordersThick,
-        props = {
-            anchor = v2(0, .5),
-            size = v2(100, topButtonHeight),
-            visible = true
-        },
-        content = ui.content {
-            {
-                template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
-                props = {
-                    anchor = v2(.5, .5),
-                    relativePosition = v2(.5, .5),
-                    text = "Finished",
-                    textSize = text_size + 1,
-                    textColor = questMode == "FINISHED" and util.color.rgb(255, 255, 255) or nil
-                }
-            }
-        },
-        events = {
-            mousePress = async:callback(function()
-                if questMenu then
-                    questMenu:destroy()
-                    questMenu = nil
-                    questMode = "FINISHED"
-                    createQuestMenu(page, getQuests())
-                end
-            end)
-        }
-    }
+    local buttonFinished = UIComponents.createButton("Finished", 100, topButtonHeight, nil, v2(0, .5), function()
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            questMode = "FINISHED"
+            createQuestMenu(page, getQuests())
+        end
+    end, questMode == "FINISHED")
 
-    local buttonActive = {
-        type = ui.TYPE.Widget,
-        template = I.MWUI.templates.bordersThick,
-        props = {
-            anchor = v2(0, .5),
-            size = v2(100, topButtonHeight),
-            visible = true
-        },
-        content = ui.content {
-            {
-                template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
-                props = {
-                    anchor = v2(.5, .5),
-                    relativePosition = v2(.5, .5),
-                    text = "Active",
-                    textSize = text_size + 1,
-                    textColor = questMode == "ACTIVE" and util.color.rgb(255, 255, 255) or nil
-                }
-            }
-        },
-        events = {
-            mousePress = async:callback(function()
-                if questMenu then
-                    questMenu:destroy()
-                    questMenu = nil
-                    questMode = "ACTIVE"
-                    createQuestMenu(getQuests())
-                end
-            end)
-        }
-    }
+    local buttonActive = UIComponents.createButton("Active", 100, topButtonHeight, nil, v2(0, .5), function()
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            questMode = "ACTIVE"
+            createQuestMenu(0, getQuests())
+        end
+    end, questMode == "ACTIVE")
 
     local buttonTopGap = {
         type = ui.TYPE.Widget,

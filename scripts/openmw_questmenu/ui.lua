@@ -1,12 +1,9 @@
-local self = require("openmw.self")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
 local input = require('openmw.input')
 local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
-local types = require("openmw.types")
 local vfs = require('openmw.vfs')
-local core = require("openmw.core")
 
 local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
@@ -39,22 +36,10 @@ local function hasValue(tab, val)
     return false
 end
 
-local function getQuests()
-    return types.Player.quests(self)
-end
-
 local function createQuest(quest)
-    local qid = quest.id:lower()
-    local icon = I.SSQN.getQIcon(qid)
-    local dialogueRecord = core.dialogue.journal.records[qid];
+    local icon = I.SSQN.getQIcon(quest.id)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
-
-    if dialogueRecord == nil then
-        dialogueRecord = {
-            questName = "Unknown"
-        }
-    end
 
     local questLogo = {
         type = ui.TYPE.Image,
@@ -71,7 +56,7 @@ local function createQuest(quest)
         template = I.MWUI.templates.textNormal,
         type = ui.TYPE.Text,
         props = {
-            text = dialogueRecord.questName,
+            text = quest.name,
             textSize = screenSize.x * 0.0094
         }
     }
@@ -257,7 +242,7 @@ local function createQuestMenu(page, quests)
             questMenu:destroy()
             questMenu = nil
             questMode = "FINISHED"
-            createQuestMenu(page, getQuests())
+            createQuestMenu(page, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "FINISHED")
 
@@ -266,7 +251,7 @@ local function createQuestMenu(page, quests)
             questMenu:destroy()
             questMenu = nil
             questMode = "ACTIVE"
-            createQuestMenu(0, getQuests())
+            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "ACTIVE")
 
@@ -410,12 +395,16 @@ local function onKeyPress(key)
     if key.symbol == playerSettings:get('OpenMenuNew') then
         if questMenu == nil then
             I.UI.setMode('Interface', { windows = {} })
-            createQuestMenu(0, getQuests())
+            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
         else
             I.UI.removeMode('Interface')
             questMenu:destroy()
             questMenu = nil;
         end
+    end
+
+    if key.code == input.KEY.M then
+        print('amount of quests:' .. #I.OpenMWQuestList.getQuestList())
     end
 
     if key.code == input.KEY.Escape and questMenu then

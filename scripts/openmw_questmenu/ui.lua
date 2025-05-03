@@ -42,9 +42,24 @@ local function selectQuest(quest)
 end
 
 local function createQuest(quest)
-    local icon = I.SSQN.getQIcon(quest.id)
+    local icon = nil
+    local questLogo = nil
+    if (I.SSQN) then
+        icon = I.SSQN.getQIcon(quest.id)
 
-    if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+        if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+
+        questLogo = {
+            type = ui.TYPE.Image,
+            props = {
+                relativePosition = v2(.5, .5),
+                anchor = v2(.5, .5),
+                size = v2(icon_size, icon_size),
+                resource = ui.texture { path = icon },
+                color = util.color.rgb(1, 1, 1)
+            }
+        }
+    end
 
     local function getColor()
         if selectedQuest and selectedQuest.id == quest.id then
@@ -53,17 +68,6 @@ local function createQuest(quest)
 
         return nil
     end
-
-    local questLogo = {
-        type = ui.TYPE.Image,
-        props = {
-            relativePosition = v2(.5, .5),
-            anchor = v2(.5, .5),
-            size = v2(icon_size, icon_size),
-            resource = ui.texture { path = icon },
-            color = util.color.rgb(1, 1, 1)
-        }
-    }
 
     local questNameText = {
         template = I.MWUI.templates.textNormal,
@@ -82,6 +86,18 @@ local function createQuest(quest)
         }
     }
 
+    local function createContent()
+        if (icon ~= nil) then
+            return {
+                questLogo,
+                emptyVBox,
+                questNameText
+            }
+        end
+
+        return { emptyVBox, questNameText }
+    end
+
     return {
         type = ui.TYPE.Flex,
         props = {
@@ -94,11 +110,7 @@ local function createQuest(quest)
             stretch = 1,
             grow = 1
         },
-        content = ui.content {
-            questLogo,
-            emptyVBox,
-            questNameText
-        },
+        content = ui.content(createContent()),
         events = {
             mouseClick = async:callback(function()
                 selectQuest(quest)
@@ -307,7 +319,7 @@ createQuestMenu = function(page, quests)
         }
     }
 
-    local function createDetailPageTest()
+    local function createDetailPageText()
         if (selectedQuest == nil) then
             return tostring(detailPage);
         end
@@ -321,7 +333,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
-            text = createDetailPageTest(),
+            text = createDetailPageText(),
             textSize = text_size + 4
         }
     }

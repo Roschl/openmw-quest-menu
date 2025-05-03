@@ -29,19 +29,21 @@ local menu_block_width = widget_width * 0.30
 local createQuestMenu
 local selectedQuest = nil
 
+local questsPerPage = 3
+local questPage = 1
 local detailPage = 1
 
-local function selectQuest(quest)
+local function selectQuest(quest, page)
     selectedQuest = quest
     if questMenu then
         questMenu:destroy()
         questMenu = nil
         detailPage = 1
-        createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+        createQuestMenu(page, I.OpenMWQuestList.getQuestList())
     end
 end
 
-local function createQuest(quest)
+local function createQuest(quest, page)
     local icon = nil
     local questLogo = nil
     if (I.SSQN) then
@@ -113,27 +115,46 @@ local function createQuest(quest)
         content = ui.content(createContent()),
         events = {
             mouseClick = async:callback(function()
-                selectQuest(quest)
+                selectQuest(quest, page)
             end)
         },
     }
 end
 
-local function createQuestList(quests)
+local function createQuestList(quests, page)
     local questlist = {}
 
-    for _, quest in pairs(quests) do
-        if (questMode == "ACTIVE" and quest.hidden ~= true and quest.finished ~= true)
-            or (questMode == "HIDDEN" and quest.hidden == true)
-            or (questMode == "FINISHED" and quest.finished == true) then
-            table.insert(questlist, createQuest(quest))
+    if (questMode == "ACTIVE") then
+        for _, quest in pairs(quests) do
+            if (quest.hidden ~= true and quest.finished ~= true) then
+                table.insert(questlist, quest)
+            end
+        end
+    elseif (questMode == "HIDDEN") then
+        for _, quest in pairs(quests) do
+            if (quest.hidden == true) then
+                table.insert(questlist, quest)
+            end
+        end
+    elseif (questMode == "FINISHED") then
+        for _, quest in pairs(quests) do
+            if (quest.finished == true) then
+                table.insert(questlist, quest)
+            end
+        end
+    end
+
+    local paginatedList = {}
+    for index, quest in pairs(questlist) do
+        if ((index - 1) >= ((page - 1) * questsPerPage) and (index - 1) < ((page - 1) * questsPerPage + questsPerPage)) then
+            table.insert(paginatedList, createQuest(quest, page))
         end
     end
 
     return ui.content {
         {
             type = ui.TYPE.Flex,
-            content = ui.content(questlist),
+            content = ui.content(paginatedList),
         }
     }
 end
@@ -173,6 +194,28 @@ end
 createQuestMenu = function(page, quests)
     local menu_block_path = "Textures\\menu_head_block_middle.dds"
     local topButtonHeight = 23
+
+    local filteredQuests = {}
+
+    if (questMode == "ACTIVE") then
+        for _, quest in pairs(quests) do
+            if (quest.hidden ~= true and quest.finished ~= true) then
+                table.insert(filteredQuests, quest)
+            end
+        end
+    elseif (questMode == "HIDDEN") then
+        for _, quest in pairs(quests) do
+            if (quest.hidden == true) then
+                table.insert(filteredQuests, quest)
+            end
+        end
+    elseif (questMode == "FINISHED") then
+        for _, quest in pairs(quests) do
+            if (quest.finished == true) then
+                table.insert(filteredQuests, quest)
+            end
+        end
+    end
 
     local header = {
         type = ui.TYPE.Flex,
@@ -230,13 +273,6 @@ createQuestMenu = function(page, quests)
         }
     }
 
-    local emptyVBox = {
-        type = ui.TYPE.Widget,
-        props = {
-            size = v2(7, 80)
-        }
-    }
-
     local questList = {
         type = ui.TYPE.Flex,
         props = {
@@ -245,7 +281,7 @@ createQuestMenu = function(page, quests)
             anchor = v2(0, 0),
             relativePosition = v2(0, 0)
         },
-        content = createQuestList(quests)
+        content = createQuestList(filteredQuests, page)
     }
 
     local questBox = {
@@ -268,22 +304,23 @@ createQuestMenu = function(page, quests)
         content = createQuestDetail()
     }
 
-    local buttonQuestListBack = UIComponents.createButton("Back", 80, topButtonHeight, v2(0, .5), v2(0, .5), function()
-        if questMenu and page > 0 then
-            questMenu:destroy()
-            questMenu = nil
-            createQuestMenu(page - 1, quests)
-        end
-    end)
+    local function createListNavigation(direction, relativePosition, anchor)
+        local text = direction == "+" and "Next" or "Back"
+        local nextPage = direction == "+" and (page + 1) or (page - 1)
 
-    local buttonQuestListForward = UIComponents.createButton("Next", 80, topButtonHeight, v2(1, .5), v2(1, .5),
-        function()
-            if questMenu then
-                questMenu:destroy()
-                questMenu = nil
-                createQuestMenu(page + 1, quests)
-            end
-        end)
+        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > math.ceil(#filteredQuests / questsPerPage))) then
+            return {}
+        end
+
+        return UIComponents.createButton(text, 80, topButtonHeight, relativePosition, anchor,
+            function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    createQuestMenu(nextPage, filteredQuests)
+                end
+            end)
+    end
 
     local function createDetailNavigation(direction, relativePosition, anchor)
         if (selectedQuest == nil) then
@@ -303,9 +340,13 @@ createQuestMenu = function(page, quests)
                     questMenu:destroy()
                     questMenu = nil
                     detailPage = nextPage
-                    createQuestMenu(page, quests)
+                    createQuestMenu(page, filteredQuests)
                 end
             end)
+    end
+
+    local function createPageText()
+        return tostring(page) .. " / " .. tostring(math.ceil(#filteredQuests / questsPerPage))
     end
 
     local pageText = {
@@ -314,7 +355,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
-            text = tostring(page),
+            text = createPageText(),
             textSize = text_size + 4
         }
     }
@@ -346,9 +387,11 @@ createQuestMenu = function(page, quests)
             relativePosition = v2(.5, .5),
             size = v2(widget_width * 0.65, 30)
         },
-        content = ui.content(
-            { buttonQuestListBack, pageText, buttonQuestListForward }
-        )
+        content = ui.content({
+            createListNavigation("-", v2(0, .5), v2(0, .5)),
+            pageText,
+            createListNavigation("+", v2(1, .5), v2(1, .5))
+        })
     }
 
     local buttonsBoxDetails = {
@@ -371,7 +414,7 @@ createQuestMenu = function(page, quests)
             questMenu:destroy()
             questMenu = nil
             questMode = "HIDDEN"
-            createQuestMenu(page, I.OpenMWQuestList.getQuestList())
+            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "HIDDEN")
 
@@ -380,7 +423,7 @@ createQuestMenu = function(page, quests)
             questMenu:destroy()
             questMenu = nil
             questMode = "FINISHED"
-            createQuestMenu(page, I.OpenMWQuestList.getQuestList())
+            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "FINISHED")
 
@@ -389,7 +432,7 @@ createQuestMenu = function(page, quests)
             questMenu:destroy()
             questMenu = nil
             questMode = "ACTIVE"
-            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "ACTIVE")
 
@@ -493,7 +536,7 @@ local function onKeyPress(key)
     if key.symbol == playerSettings:get('OpenMenuNew') then
         if questMenu == nil then
             I.UI.setMode('Interface', { windows = {} })
-            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         else
             I.UI.removeMode('Interface')
             questMenu:destroy()

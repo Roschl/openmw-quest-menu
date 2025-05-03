@@ -19,8 +19,6 @@ local function onQuestUpdate(questId, stage)
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, stage)
 
-    print('Hello, World!' .. qid)
-
     if dialogueRecordInfo == nil then
         dialogueRecordInfo = {
             text = "No Information Found"
@@ -33,7 +31,7 @@ local function onQuestUpdate(questId, stage)
         if quest.id == qid then
             questExists = true
             quest.stage = stage
-            table.insert(quest.notes, "TEST")
+            table.insert(quest.notes, dialogueRecordInfo.text)
         end
 
         table.insert(newQuestList, quest)
@@ -51,8 +49,6 @@ local function onQuestUpdate(questId, stage)
         table.insert(newQuest.notes, dialogueRecordInfo.text)
         table.insert(newQuestList, newQuest)
     end
-
-    print('NEW QUESTS: ' .. #newQuestList)
 
     questList = newQuestList
 end

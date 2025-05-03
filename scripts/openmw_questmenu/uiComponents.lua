@@ -6,6 +6,46 @@ local v2 = util.vector2
 
 local textSize = 13.5
 
+local function createBox(width, height, content)
+    return {
+        name = "mainWindowWidget",
+        type = ui.TYPE.Widget,
+        template = I.MWUI.templates.bordersThick,
+        props = {
+            size = v2(width, height)
+        },
+        content = ui.content {
+            {
+                type = ui.TYPE.Widget,
+                props = {
+                    name = "pluginBoxPadding",
+                    size = v2(width, height)
+                },
+                content = ui.content {
+
+                    {
+                        type = ui.TYPE.Flex,
+                        props = {
+                            anchor = v2(.5, .5),
+                            relativePosition = v2(.5, .5),
+                            name = "pluginBoxFlex",
+                            horizontal = false,
+                            align = ui.ALIGNMENT.Start,
+                            arrange = ui.ALIGNMENT.Center
+                        },
+                        external = {
+                            stretch = 0.4
+                        },
+                        content = content
+                    }
+
+
+                }
+            }
+        }
+    }
+end
+
 local function createButton(text, width, height, relativePosition, anchor, callback, highlight)
     local defaultWidth = 100
     local defaultHeight = 25
@@ -39,6 +79,44 @@ local function createButton(text, width, height, relativePosition, anchor, callb
     }
 end
 
+local function createButtonGroup(width, content)
+    return {
+        type = ui.TYPE.Widget,
+        props = {
+            name = "buttonGroup",
+            anchor = v2(.5, .5),
+            relativePosition = v2(.5, .5),
+            size = v2(width, 30)
+        },
+        content = ui.content {
+            {
+                type = ui.TYPE.Flex,
+                props = {
+                    horizontal = true,
+                    anchor = v2(.5, .5),
+                    relativePosition = v2(.5, .5),
+                },
+                content = content
+            }
+        }
+    }
+end
+
+local function createHorizontalLine(width, height)
+    local defaultHeight = 2
+
+    return {
+        type = ui.TYPE.Image,
+        template = I.MWUI.templates.horizontalLine,
+        props = {
+            size = v2(width, height or defaultHeight)
+        }
+    }
+end
+
 return {
+    createBox = createBox,
     createButton = createButton,
+    createButtonGroup = createButtonGroup,
+    createHorizontalLine = createHorizontalLine
 }

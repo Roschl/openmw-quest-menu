@@ -4,6 +4,7 @@ local input = require('openmw.input')
 local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
+local async = require('openmw.async')
 
 local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
@@ -26,6 +27,9 @@ local widget_height = screenSize.y * height_ratio
 local icon_size = screenSize.y * 0.03
 local menu_block_width = widget_width * 0.30
 
+local createQuestMenu
+local selectedQuest = nil
+
 local function hasValue(tab, val)
     for _, value in ipairs(tab) do
         if value == val then
@@ -36,10 +40,27 @@ local function hasValue(tab, val)
     return false
 end
 
+local function selectQuest(quest)
+    selectedQuest = quest
+    if questMenu then
+        questMenu:destroy()
+        questMenu = nil
+        createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+    end
+end
+
 local function createQuest(quest)
     local icon = I.SSQN.getQIcon(quest.id)
 
     if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+
+    local function getColor()
+        if selectedQuest and selectedQuest.id == quest.id then
+            return util.color.rgb(255, 255, 255)
+        end
+
+        return nil
+    end
 
     local questLogo = {
         type = ui.TYPE.Image,
@@ -57,7 +78,8 @@ local function createQuest(quest)
         type = ui.TYPE.Text,
         props = {
             text = quest.name,
-            textSize = screenSize.x * 0.0094
+            textSize = screenSize.x * 0.0094,
+            textColor = getColor()
         }
     }
 
@@ -84,7 +106,12 @@ local function createQuest(quest)
             questLogo,
             emptyVBox,
             questNameText
-        }
+        },
+        events = {
+            mouseClick = async:callback(function()
+                selectQuest(quest)
+            end)
+        },
     }
 end
 
@@ -106,14 +133,58 @@ local function createQuestList(quests)
     }
 end
 
-local function createQuestMenu(page, quests)
+local function createQuestDetail()
+    if selectedQuest == nil then
+        return ui.content {
+            {
+                template = I.MWUI.templates.textNormal,
+                type = ui.TYPE.Text,
+                props = {
+                    anchor = v2(.5, .5),
+                    relativePosition = v2(.5, .5),
+                    text = "No Quest selected!",
+                    textColor = util.color.rgb(255, 255, 255),
+                    textSize = text_size,
+                }
+            }
+        }
+    end
+
+    local notes = {}
+
+    for _, note in pairs(selectedQuest.notes) do
+        local textSize = 13
+        local length = string.len(note) / 48 * textSize
+
+        table.insert(notes, {
+            template = I.MWUI.templates.textNormal,
+            props = {
+                text = note .. " amount:" .. #selectedQuest.notes,
+                textSize = textSize,
+                size = v2((widget_width * 0.8), length),
+                multiline = true,
+                wordWrap = true,
+                autoSize = false,
+            }
+        })
+    end
+
+    return ui.content {
+        {
+            type = ui.TYPE.Flex,
+            content = ui.content(notes),
+        }
+    }
+end
+
+createQuestMenu = function(page, quests)
     local menu_block_path = "Textures\\menu_head_block_middle.dds"
     local topButtonHeight = 23
 
     local header = {
         type = ui.TYPE.Flex,
         props = {
-            size = v2(widget_width, 20),
+            size = v2(widget_width * 2, 20),
             horizontal = true
         },
         content = ui.content {
@@ -121,17 +192,17 @@ local function createQuestMenu(page, quests)
                 type = ui.TYPE.Image,
                 props = {
                     anchor = v2(.5, .5),
-                    size = v2(menu_block_width, 20),
+                    size = v2(menu_block_width * 2, 20),
                     resource = ui.texture {
                         path = menu_block_path,
-                        size = v2(menu_block_width, 15)
+                        size = v2(menu_block_width * 2, 15)
                     }
                 }
             },
             {
                 type = ui.TYPE.Widget,
                 props = {
-                    size = v2(widget_width * 0.4, 20),
+                    size = v2(widget_width * 2 * 0.4, 20),
                     anchor = v2(.5, .5)
                 },
                 content = ui.content { {
@@ -150,10 +221,10 @@ local function createQuestMenu(page, quests)
                 type = ui.TYPE.Image,
                 props = {
                     anchor = v2(.5, .5),
-                    size = v2(menu_block_width, 20),
+                    size = v2(menu_block_width * 2, 20),
                     resource = ui.texture {
                         path = menu_block_path,
-                        size = v2(menu_block_width, 15) }
+                        size = v2(menu_block_width * 2, 15) }
                 }
             }
         }
@@ -187,11 +258,21 @@ local function createQuestMenu(page, quests)
     local questBox = {
         type = ui.TYPE.Widget,
         props = {
-            anchor = v2(.5, .5),
-            relativePosition = v2(.5, .5),
+            anchor = v2(.25, .5),
+            relativePosition = v2(.25, .5),
             size = v2(widget_width * 0.85, icon_size * 16)
         },
         content = ui.content({ questList })
+    }
+
+    local questDetailBox = {
+        type = ui.TYPE.Widget,
+        props = {
+            anchor = v2(1, .5),
+            relativePosition = v2(1, .5),
+            size = v2(widget_width * 0.85, icon_size * 16)
+        },
+        content = createQuestDetail()
     }
 
     local buttonBack = UIComponents.createButton("Back", 80, topButtonHeight, v2(0, .5), v2(0, .5), function()
@@ -255,99 +336,29 @@ local function createQuestMenu(page, quests)
         end
     end, questMode == "ACTIVE")
 
+    local buttonFollow = UIComponents.createButton("Follow", 100, topButtonHeight, nil, v2(0, .5), function()
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            questMode = "ACTIVE"
+            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+        end
+    end, questMode == "ACTIVE")
+
+    local buttonHide = UIComponents.createButton("Hide", 100, topButtonHeight, nil, v2(0, .5), function()
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            questMode = "ACTIVE"
+            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+        end
+    end, questMode == "ACTIVE")
+
     local buttonTopGap = {
         type = ui.TYPE.Widget,
         props = {
             anchor = v2(0, .5),
             size = v2(10, 30)
-        }
-    }
-
-    local topButtonsFlex = {
-        type = ui.TYPE.Flex,
-        props = {
-            horizontal = true,
-            anchor = v2(.5, .5),
-            relativePosition = v2(.5, .5),
-        },
-        content = ui.content({
-            buttonActive,
-            buttonTopGap,
-            buttonFinished,
-            buttonTopGap,
-            buttonHidden })
-    }
-
-    local topButtonsBox = {
-        type = ui.TYPE.Widget,
-        props = {
-            name = "topButtonsBox",
-            anchor = v2(.5, .5),
-            relativePosition = v2(.5, .5),
-            size = v2(widget_width * 0.85, 30)
-        },
-        content = ui.content(
-            { topButtonsFlex }
-        )
-    }
-
-    local horizontalLine = {
-        type = ui.TYPE.Image,
-        template = I.MWUI.templates.horizontalLine,
-        props = {
-            size = v2(widget_width * 0.85, 2)
-        }
-    }
-
-    local pluginBox = ui.content {
-        {
-            type = ui.TYPE.Widget,
-            template = I.MWUI.templates.borders,
-            props = {
-                name = "pluginBox",
-                anchor = v2(.5, .5),
-                relativePosition = v2(.5, .5),
-                size = v2(widget_width * 0.93, (widget_height) * 0.93)
-            },
-            content = ui.content {
-                {
-                    type = ui.TYPE.Flex,
-                    props = {
-                        anchor = v2(.5, .5),
-                        relativePosition = v2(.5, .5),
-                        name = "pluginBoxFlex",
-                        horizontal = false,
-                        align = ui.ALIGNMENT.Start,
-                        arrange = ui.ALIGNMENT.Center
-                    },
-                    external = {
-                        stretch = 0.4
-                    },
-                    content = ui.content {
-                        emptyHBox,
-                        topButtonsBox,
-                        horizontalLine,
-                        emptyHBox,
-                        questBox,
-                        horizontalLine,
-                        emptyHBox,
-                        buttonsBox
-                    }
-                }
-            }
-        }
-    }
-
-    local pluginBoxPadding = ui.content {
-        {
-            type = ui.TYPE.Widget,
-            props = {
-                name = "pluginBoxPadding",
-                anchor = v2(.5, .5),
-                relativePosition = v2(.5, .5),
-                size = v2(widget_width, (widget_height - 10))
-            },
-            content = pluginBox
         }
     }
 
@@ -357,8 +368,8 @@ local function createQuestMenu(page, quests)
         template = I.MWUI.templates.boxTransparentThick,
         props = {
             name = "mainWindow",
-            relativePosition = v2(.5, .5),
-            anchor = v2(.5, .5),
+            relativePosition = v2(.25, .5),
+            anchor = v2(.25, .5),
             propagateEvents = false
         },
         content = ui.content {
@@ -366,7 +377,7 @@ local function createQuestMenu(page, quests)
                 type = ui.TYPE.Flex,
                 props = {
                     name = "mainWindowFlex",
-                    size = v2(widget_width, widget_height),
+                    size = v2(widget_width * 2, widget_height),
                     autoSize = false,
                     horizontal = false,
                     align = ui.ALIGNMENT.Center,
@@ -375,14 +386,45 @@ local function createQuestMenu(page, quests)
                 content = ui.content {
                     header,
                     {
-                        name = "mainWindowWidget",
-                        type = ui.TYPE.Widget,
-                        template = I.MWUI.templates.bordersThick,
+                        type = ui.TYPE.Flex,
                         props = {
-                            size = v2(widget_width, widget_height - 20)
+                            horizontal = true,
+                            align = ui.ALIGNMENT.Start,
+                            arrange = ui.ALIGNMENT.Center
                         },
-                        content = pluginBoxPadding
+                        content = ui.content {
+                            UIComponents.createBox(widget_width, widget_height - 20, ui.content {
+                                emptyHBox,
+                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
+                                    buttonActive,
+                                    buttonTopGap,
+                                    buttonFinished,
+                                    buttonTopGap,
+                                    buttonHidden
+                                })),
+                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                emptyHBox,
+                                questBox,
+                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                emptyHBox,
+                                buttonsBox
+                            }),
+                            UIComponents.createBox(widget_width, widget_height - 20, ui.content {
+                                emptyHBox,
+                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                emptyHBox,
+                                questDetailBox,
+                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                emptyHBox,
+                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
+                                    buttonFollow,
+                                    buttonTopGap,
+                                    buttonHide,
+                                })),
+                            })
+                        }
                     }
+
                 }
             }
         }

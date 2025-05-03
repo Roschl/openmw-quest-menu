@@ -28,6 +28,34 @@ local function toggleQuest(qid)
     questList = newQuestList
 end
 
+local function onLoadMidGame()
+    local newQuestList = {};
+
+    for _, quest in pairs(types.Player.quests(self)) do
+        local dialogueRecord = core.dialogue.journal.records[quest.id]
+        local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
+
+        if dialogueRecordInfo == nil then
+            dialogueRecordInfo = {
+                text = "No Information Found"
+            }
+        end
+
+        local newQuest = {
+            id = quest.id,
+            name = dialogueRecord.questName,
+            stage = quest.stage,
+            hidden = false,
+            finished = quest.finished,
+            notes = {}
+        }
+        table.insert(newQuest.notes, 1, dialogueRecordInfo.text)
+        table.insert(newQuestList, newQuest)
+    end
+
+    questList = newQuestList
+end
+
 local function onQuestUpdate(questId, stage)
     local isFinished = false;
     for _, quest in pairs(types.Player.quests(self)) do
@@ -85,8 +113,8 @@ local function onSave()
 end
 
 local function onLoad(data)
-    if not data or not data.questList then
-        questList = {}
+    if not data or not data.questList or #data.questList == 0 then
+        onLoadMidGame()
         return
     end
 

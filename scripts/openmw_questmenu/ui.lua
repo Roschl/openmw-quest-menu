@@ -14,11 +14,11 @@ local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuContr
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
-local showable = nil;
-local text_size = 13.5
+local text_size = 15
+local showable = nil
 
 local screenSize = ui.screenSize()
-local width_ratio = 0.25
+local width_ratio = 0.5
 local height_ratio = 0.65
 local widget_width = screenSize.x * width_ratio
 local widget_height = screenSize.y * height_ratio
@@ -29,7 +29,7 @@ local menu_block_width = widget_width * 0.30
 local createQuestMenu
 local selectedQuest = nil
 
-local questsPerPage = 3
+local questsPerPage = 12
 local detailPage = 1
 
 local function selectQuest(quest, page)
@@ -75,7 +75,7 @@ local function createQuest(quest, page)
         type = ui.TYPE.Text,
         props = {
             text = quest.name,
-            textSize = screenSize.x * 0.0094,
+            textSize = text_size,
             textColor = getColor()
         }
     }
@@ -181,7 +181,7 @@ local function createQuestDetail()
             template = I.MWUI.templates.textNormal,
             props = {
                 text = note,
-                size = v2((widget_width * 0.85), icon_size * 16),
+                size = v2((widget_width / 2 * 0.85), icon_size * 16),
                 multiline = true,
                 wordWrap = true,
                 autoSize = false,
@@ -219,7 +219,7 @@ createQuestMenu = function(page, quests)
     local header = {
         type = ui.TYPE.Flex,
         props = {
-            size = v2(widget_width * 2, 20),
+            size = v2(widget_width, 20),
             horizontal = true
         },
         content = ui.content {
@@ -227,17 +227,17 @@ createQuestMenu = function(page, quests)
                 type = ui.TYPE.Image,
                 props = {
                     anchor = v2(.5, .5),
-                    size = v2(menu_block_width * 2, 20),
+                    size = v2(menu_block_width, 20),
                     resource = ui.texture {
                         path = menu_block_path,
-                        size = v2(menu_block_width * 2, 15)
+                        size = v2(menu_block_width, 15)
                     }
                 }
             },
             {
                 type = ui.TYPE.Widget,
                 props = {
-                    size = v2(widget_width * 2 * 0.4, 20),
+                    size = v2(widget_width * 0.4, 20),
                     anchor = v2(.5, .5)
                 },
                 content = ui.content { {
@@ -256,10 +256,10 @@ createQuestMenu = function(page, quests)
                 type = ui.TYPE.Image,
                 props = {
                     anchor = v2(.5, .5),
-                    size = v2(menu_block_width * 2, 20),
+                    size = v2(menu_block_width, 20),
                     resource = ui.texture {
                         path = menu_block_path,
-                        size = v2(menu_block_width * 2, 15) }
+                        size = v2(menu_block_width, 15) }
                 }
             }
         }
@@ -288,7 +288,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(.25, .5),
             relativePosition = v2(.25, .5),
-            size = v2(widget_width * 0.85, icon_size * 16)
+            size = v2(widget_width / 2 * 0.85, icon_size * 16)
         },
         content = ui.content({ questList })
     }
@@ -298,7 +298,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(1, .5),
             relativePosition = v2(1, .5),
-            size = v2(widget_width * 0.85, icon_size * 16)
+            size = v2(widget_width / 2 * 0.85, icon_size * 16)
         },
         content = createQuestDetail()
     }
@@ -384,7 +384,7 @@ createQuestMenu = function(page, quests)
             name = "buttonsBox",
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
-            size = v2(widget_width * 0.65, 30)
+            size = v2(widget_width / 2 * 0.65, 30)
         },
         content = ui.content({
             createListNavigation("-", v2(0, .5), v2(0, .5)),
@@ -399,7 +399,7 @@ createQuestMenu = function(page, quests)
             name = "buttonsBox",
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
-            size = v2(widget_width * 0.65, 30)
+            size = v2(widget_width / 2 * 0.65, 30)
         },
         content = ui.content({
             createDetailNavigation("-", v2(0, .5), v2(0, .5)),
@@ -470,8 +470,8 @@ createQuestMenu = function(page, quests)
         template = I.MWUI.templates.boxTransparentThick,
         props = {
             name = "mainWindow",
-            relativePosition = v2(.25, .5),
-            anchor = v2(.25, .5),
+            relativePosition = v2(.5, .5),
+            anchor = v2(.5, .5),
             propagateEvents = false
         },
         content = ui.content {
@@ -479,7 +479,7 @@ createQuestMenu = function(page, quests)
                 type = ui.TYPE.Flex,
                 props = {
                     name = "mainWindowFlex",
-                    size = v2(widget_width * 2, widget_height),
+                    size = v2(widget_width, widget_height),
                     autoSize = false,
                     horizontal = false,
                     align = ui.ALIGNMENT.Center,
@@ -495,31 +495,31 @@ createQuestMenu = function(page, quests)
                             arrange = ui.ALIGNMENT.Center
                         },
                         content = ui.content {
-                            UIComponents.createBox(widget_width, widget_height - 20, ui.content {
+                            UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyHBox,
-                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
+                                UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
                                     buttonActive,
                                     buttonTopGap,
                                     buttonFinished,
                                     buttonTopGap,
                                     buttonHidden
                                 })),
-                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyHBox,
                                 questBox,
-                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyHBox,
                                 buttonsBox
                             }),
-                            UIComponents.createBox(widget_width, widget_height - 20, ui.content {
+                            UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyHBox,
-                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
+                                UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
                                     createButtonHide()
                                 })),
-                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyHBox,
                                 questDetailBox,
-                                UIComponents.createHorizontalLine(widget_width * 0.85),
+                                UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyHBox,
                                 buttonsBoxDetails
                             })
@@ -536,24 +536,25 @@ end
 
 local function onKeyPress(key)
     if key.symbol == playerSettings:get('OpenMenu') then
-        if questMenu == nil then
+        if showable == nil then
             I.UI.setMode('Interface', { windows = {} })
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())
+            showable = true
         else
             I.UI.removeMode('Interface')
-            questMenu:destroy()
-            questMenu = nil;
+            if (questMenu) then
+                questMenu:destroy()
+                questMenu = nil;
+            end
+            showable = nil
         end
     end
 
-    if key.code == input.KEY.M then
-        print('amount of quests:' .. #I.OpenMWQuestList.getQuestList())
-    end
-
-    if key.code == input.KEY.Escape and questMenu then
+    if key.code == input.KEY.Escape and questMenu and showable == true then
         I.UI.removeMode('Interface')
         questMenu:destroy()
         questMenu = nil;
+        showable = nil
     end
 end
 
@@ -562,11 +563,13 @@ local function onInputAction(id)
         if questMenu and id == input.ACTION.Inventory then
             questMenu:destroy()
             questMenu = nil;
+            showable = nil
         end
 
         if questMenu and id == input.ACTION.Journal then
             questMenu:destroy()
             questMenu = nil;
+            showable = nil
             I.UI.removeMode('Interface')
         end
     end

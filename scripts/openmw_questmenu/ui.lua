@@ -10,7 +10,7 @@ local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
 local v2 = util.vector2
 
-local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuControls')
+local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuControls')
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
@@ -535,7 +535,7 @@ createQuestMenu = function(page, quests)
 end
 
 local function onKeyPress(key)
-    if key.symbol == playerSettings:get('OpenMenuNew') then
+    if key.symbol == playerSettings:get('OpenMenu') then
         if questMenu == nil then
             I.UI.setMode('Interface', { windows = {} })
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())

@@ -1,4 +1,3 @@
 MENU: scripts/openmw_questmenu/menuSettings.lua
 PLAYER: scripts/openmw_questmenu/questHandler.lua
-PLAYER: scripts/openmw_questmenu/player.lua
 PLAYER: scripts/openmw_questmenu/ui.lua

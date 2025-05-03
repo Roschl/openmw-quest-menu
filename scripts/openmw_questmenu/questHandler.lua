@@ -14,6 +14,18 @@ local function findDialogueWithStage(dialogueTable, targetStage)
     return filteredDialogue
 end
 
+local function toggleQuest(qid)
+    local newQuestList = {};
+    for _, quest in ipairs(questList) do
+        if quest.id == qid then
+            quest.hidden = not quest.hidden
+        end
+
+        table.insert(newQuestList, quest)
+    end
+    questList = newQuestList
+end
+
 local function onQuestUpdate(questId, stage)
     local qid = questId:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
@@ -31,6 +43,7 @@ local function onQuestUpdate(questId, stage)
         if quest.id == qid then
             questExists = true
             quest.stage = stage
+            quest.finished = dialogueRecordInfo.questFinished
             table.insert(quest.notes, dialogueRecordInfo.text)
         end
 
@@ -42,7 +55,8 @@ local function onQuestUpdate(questId, stage)
             id = qid,
             name = dialogueRecord.questName,
             stage = stage,
-            finished = false,
+            hidden = false,
+            finished = dialogueRecordInfo.questFinished,
             notes = {}
         }
 
@@ -75,7 +89,8 @@ end
 return {
     interfaceName = 'OpenMWQuestList',
     interface = {
-        getQuestList = getQuestList
+        getQuestList = getQuestList,
+        toggleQuest = toggleQuest
     },
     engineHandlers = {
         onSave = onSave,

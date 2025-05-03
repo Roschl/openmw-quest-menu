@@ -22,7 +22,6 @@ local function createBox(width, height, content)
                     size = v2(width, height)
                 },
                 content = ui.content {
-
                     {
                         type = ui.TYPE.Flex,
                         props = {
@@ -38,8 +37,6 @@ local function createBox(width, height, content)
                         },
                         content = content
                     }
-
-
                 }
             }
         }

@@ -13,7 +13,7 @@ local v2 = util.vector2
 local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMenuControls')
 
 local questMenu = nil
-local questMode = 'ACTIVE' -- ACTIVE, FINISHED
+local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
 local showable = nil;
 local hiddenQuests = {}
 local text_size = 13.5
@@ -30,6 +30,8 @@ local menu_block_width = widget_width * 0.30
 local createQuestMenu
 local selectedQuest = nil
 
+local detailPage = 1
+
 local function hasValue(tab, val)
     for _, value in ipairs(tab) do
         if value == val then
@@ -45,6 +47,7 @@ local function selectQuest(quest)
     if questMenu then
         questMenu:destroy()
         questMenu = nil
+        detailPage = 1
         createQuestMenu(0, I.OpenMWQuestList.getQuestList())
     end
 end
@@ -119,7 +122,8 @@ local function createQuestList(quests)
     local questlist = {}
 
     for _, quest in pairs(quests) do
-        if (questMode == "ACTIVE" and not hasValue(hiddenQuests, quest.id) and quest.finished ~= true)
+        if (questMode == "ACTIVE" and quest.hidden ~= true and quest.finished ~= true)
+            or (questMode == "HIDDEN" and quest.hidden == true)
             or (questMode == "FINISHED" and quest.finished == true) then
             table.insert(questlist, createQuest(quest))
         end
@@ -138,7 +142,6 @@ local function createQuestDetail()
         return ui.content {
             {
                 template = I.MWUI.templates.textNormal,
-                type = ui.TYPE.Text,
                 props = {
                     anchor = v2(.5, .5),
                     relativePosition = v2(.5, .5),
@@ -150,29 +153,18 @@ local function createQuestDetail()
         }
     end
 
-    local notes = {}
+    local note = selectedQuest.notes[detailPage]
 
-    for _, note in pairs(selectedQuest.notes) do
-        local textSize = 13
-        local length = string.len(note) / 48 * textSize
-
-        table.insert(notes, {
+    return ui.content {
+        {
             template = I.MWUI.templates.textNormal,
             props = {
-                text = note .. " amount:" .. #selectedQuest.notes,
-                textSize = textSize,
-                size = v2((widget_width * 0.8), length),
+                text = note,
+                size = v2((widget_width * 0.85), icon_size * 16),
                 multiline = true,
                 wordWrap = true,
                 autoSize = false,
             }
-        })
-    end
-
-    return ui.content {
-        {
-            type = ui.TYPE.Flex,
-            content = ui.content(notes),
         }
     }
 end
@@ -275,7 +267,7 @@ createQuestMenu = function(page, quests)
         content = createQuestDetail()
     }
 
-    local buttonBack = UIComponents.createButton("Back", 80, topButtonHeight, v2(0, .5), v2(0, .5), function()
+    local buttonQuestListBack = UIComponents.createButton("Back", 80, topButtonHeight, v2(0, .5), v2(0, .5), function()
         if questMenu and page > 0 then
             questMenu:destroy()
             questMenu = nil
@@ -283,13 +275,37 @@ createQuestMenu = function(page, quests)
         end
     end)
 
-    local buttonForward = UIComponents.createButton("Next", 80, topButtonHeight, v2(1, .5), v2(1, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            createQuestMenu(page + 1, quests)
+    local buttonQuestListForward = UIComponents.createButton("Next", 80, topButtonHeight, v2(1, .5), v2(1, .5),
+        function()
+            if questMenu then
+                questMenu:destroy()
+                questMenu = nil
+                createQuestMenu(page + 1, quests)
+            end
+        end)
+
+    local function createDetailNavigation(direction, relativePosition, anchor)
+        if (selectedQuest == nil) then
+            return {}
         end
-    end)
+
+        local text = direction == "+" and "Next" or "Back"
+        local nextPage = direction == "+" and (detailPage + 1) or (detailPage - 1)
+
+        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.notes)) then
+            return {}
+        end
+
+        return UIComponents.createButton(text, 80, topButtonHeight, relativePosition, anchor,
+            function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    detailPage = nextPage
+                    createQuestMenu(page, quests)
+                end
+            end)
+    end
 
     local pageText = {
         template = I.MWUI.templates.textNormal,
@@ -298,6 +314,25 @@ createQuestMenu = function(page, quests)
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
             text = tostring(page),
+            textSize = text_size + 4
+        }
+    }
+
+    local function createDetailPageTest()
+        if (selectedQuest == nil) then
+            return tostring(detailPage);
+        end
+
+        return tostring(detailPage) .. " / " .. tostring(#selectedQuest.notes)
+    end
+
+    local detailPageText = {
+        template = I.MWUI.templates.textNormal,
+        type = ui.TYPE.Text,
+        props = {
+            anchor = v2(.5, .5),
+            relativePosition = v2(.5, .5),
+            text = createDetailPageTest(),
             textSize = text_size + 4
         }
     }
@@ -311,12 +346,33 @@ createQuestMenu = function(page, quests)
             size = v2(widget_width * 0.65, 30)
         },
         content = ui.content(
-            { buttonBack, pageText, buttonForward }
+            { buttonQuestListBack, pageText, buttonQuestListForward }
         )
     }
 
+    local buttonsBoxDetails = {
+        type = ui.TYPE.Widget,
+        props = {
+            name = "buttonsBox",
+            anchor = v2(.5, .5),
+            relativePosition = v2(.5, .5),
+            size = v2(widget_width * 0.65, 30)
+        },
+        content = ui.content({
+            createDetailNavigation("-", v2(0, .5), v2(0, .5)),
+            detailPageText,
+            createDetailNavigation("+", v2(1, .5), v2(1, .5))
+        })
+    }
+
     local buttonHidden = UIComponents.createButton("Hidden", 100, topButtonHeight, nil, v2(0, .5), function()
-    end)
+        if questMenu then
+            questMenu:destroy()
+            questMenu = nil
+            questMode = "HIDDEN"
+            createQuestMenu(page, I.OpenMWQuestList.getQuestList())
+        end
+    end, questMode == "HIDDEN")
 
     local buttonFinished = UIComponents.createButton("Finished", 100, topButtonHeight, nil, v2(0, .5), function()
         if questMenu then
@@ -345,14 +401,23 @@ createQuestMenu = function(page, quests)
         end
     end, questMode == "ACTIVE")
 
-    local buttonHide = UIComponents.createButton("Hide", 100, topButtonHeight, nil, v2(0, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            questMode = "ACTIVE"
-            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
+    local function createButtonHide()
+        if (not selectedQuest) then
+            return {}
         end
-    end, questMode == "ACTIVE")
+
+        local text = selectedQuest.hidden and "Show" or "Hide"
+
+        return UIComponents.createButton(text, 100, topButtonHeight, nil, v2(0, .5), function()
+            if questMenu and selectedQuest then
+                questMenu:destroy()
+                questMenu = nil
+                I.OpenMWQuestList.toggleQuest(selectedQuest.id)
+                selectedQuest = nil
+                createQuestMenu(page, I.OpenMWQuestList.getQuestList())
+            end
+        end)
+    end
 
     local buttonTopGap = {
         type = ui.TYPE.Widget,
@@ -411,16 +476,17 @@ createQuestMenu = function(page, quests)
                             }),
                             UIComponents.createBox(widget_width, widget_height - 20, ui.content {
                                 emptyHBox,
+                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
+                                    buttonFollow,
+                                    buttonTopGap,
+                                    createButtonHide()
+                                })),
                                 UIComponents.createHorizontalLine(widget_width * 0.85),
                                 emptyHBox,
                                 questDetailBox,
                                 UIComponents.createHorizontalLine(widget_width * 0.85),
                                 emptyHBox,
-                                UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
-                                    buttonFollow,
-                                    buttonTopGap,
-                                    buttonHide,
-                                })),
+                                buttonsBoxDetails
                             })
                         }
                     }

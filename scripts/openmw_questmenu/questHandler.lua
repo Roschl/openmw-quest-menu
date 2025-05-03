@@ -1,4 +1,6 @@
+local self = require("openmw.self")
 local core = require("openmw.core")
+local types = require("openmw.types")
 
 local questList = {}
 
@@ -27,6 +29,13 @@ local function toggleQuest(qid)
 end
 
 local function onQuestUpdate(questId, stage)
+    local isFinished = false;
+    for _, quest in pairs(types.Player.quests(self)) do
+        if (quest.id == questId) then
+            isFinished = quest.finished
+        end
+    end
+
     local qid = questId:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
     local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, stage)
@@ -44,7 +53,7 @@ local function onQuestUpdate(questId, stage)
         if quest.id == qid then
             questExists = true
             quest.stage = stage
-            quest.finished = dialogueRecordInfo.questFinished
+            quest.finished = isFinished
             table.insert(quest.notes, 1, dialogueRecordInfo.text)
         end
 
@@ -58,7 +67,7 @@ local function onQuestUpdate(questId, stage)
             name = dialogueRecord.questName,
             stage = stage,
             hidden = false,
-            finished = dialogueRecordInfo.questFinished,
+            finished = isFinished,
             notes = {}
         }
 

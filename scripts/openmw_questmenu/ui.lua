@@ -30,7 +30,6 @@ local createQuestMenu
 local selectedQuest = nil
 
 local questsPerPage = 3
-local questPage = 1
 local detailPage = 1
 
 local function selectQuest(quest, page)
@@ -413,6 +412,7 @@ createQuestMenu = function(page, quests)
         if questMenu then
             questMenu:destroy()
             questMenu = nil
+            selectedQuest = nil
             questMode = "HIDDEN"
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
@@ -422,6 +422,7 @@ createQuestMenu = function(page, quests)
         if questMenu then
             questMenu:destroy()
             questMenu = nil
+            selectedQuest = nil
             questMode = "FINISHED"
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
@@ -431,13 +432,14 @@ createQuestMenu = function(page, quests)
         if questMenu then
             questMenu:destroy()
             questMenu = nil
+            selectedQuest = nil
             questMode = "ACTIVE"
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())
         end
     end, questMode == "ACTIVE")
 
     local function createButtonHide()
-        if (not selectedQuest) then
+        if (not selectedQuest or questMode == "FINISHED") then
             return {}
         end
 

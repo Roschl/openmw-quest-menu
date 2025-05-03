@@ -15,7 +15,6 @@ local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestStatusMen
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
 local showable = nil;
-local hiddenQuests = {}
 local text_size = 13.5
 
 local screenSize = ui.screenSize()
@@ -31,16 +30,6 @@ local createQuestMenu
 local selectedQuest = nil
 
 local detailPage = 1
-
-local function hasValue(tab, val)
-    for _, value in ipairs(tab) do
-        if value == val then
-            return true
-        end
-    end
-
-    return false
-end
 
 local function selectQuest(quest)
     selectedQuest = quest
@@ -392,15 +381,6 @@ createQuestMenu = function(page, quests)
         end
     end, questMode == "ACTIVE")
 
-    local buttonFollow = UIComponents.createButton("Follow", 100, topButtonHeight, nil, v2(0, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            questMode = "ACTIVE"
-            createQuestMenu(0, I.OpenMWQuestList.getQuestList())
-        end
-    end, questMode == "ACTIVE")
-
     local function createButtonHide()
         if (not selectedQuest) then
             return {}
@@ -477,8 +457,6 @@ createQuestMenu = function(page, quests)
                             UIComponents.createBox(widget_width, widget_height - 20, ui.content {
                                 emptyHBox,
                                 UIComponents.createButtonGroup(widget_width * 0.85, ui.content({
-                                    buttonFollow,
-                                    buttonTopGap,
                                     createButtonHide()
                                 })),
                                 UIComponents.createHorizontalLine(widget_width * 0.85),

@@ -63,7 +63,7 @@ local function onQuestUpdate(questId, stage)
         }
 
         table.insert(newQuest.notes, dialogueRecordInfo.text)
-        table.insert(newQuestList, newQuest)
+        table.insert(newQuestList, 1, newQuest)
     end
 
     questList = newQuestList

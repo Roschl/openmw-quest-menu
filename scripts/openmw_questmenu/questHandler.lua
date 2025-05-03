@@ -40,16 +40,18 @@ local function onQuestUpdate(questId, stage)
     local questExists = false;
     local newQuestList = {};
     for _, quest in ipairs(questList) do
+        -- If Quest already exists just update it:
         if quest.id == qid then
             questExists = true
             quest.stage = stage
             quest.finished = dialogueRecordInfo.questFinished
-            table.insert(quest.notes, dialogueRecordInfo.text)
+            table.insert(quest.notes, 1, dialogueRecordInfo.text)
         end
 
         table.insert(newQuestList, quest)
     end
 
+    -- If Quest doesnt exist yet, add new list entry:
     if (questExists == false) then
         local newQuest = {
             id = qid,

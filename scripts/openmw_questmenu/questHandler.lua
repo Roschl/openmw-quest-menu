@@ -1,6 +1,7 @@
 local self = require("openmw.self")
 local core = require("openmw.core")
 local I = require('openmw.interfaces')
+local storage = require('openmw.storage')
 local types = require("openmw.types")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
@@ -8,6 +9,8 @@ local vfs = require('openmw.vfs')
 
 local questList = {}
 local followedQuest = nil
+
+local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuCustomization')
 
 local function getFollowedQuest(quests)
     for _, quest in pairs(quests) do
@@ -40,7 +43,8 @@ local function showFollowedQuest(quest)
             return {
                 type = ui.TYPE.Image,
                 props = {
-                    size = util.vector2(32, 32),
+                    size = util.vector2(playerCustomizationSettings:get('IconSize'),
+                        playerCustomizationSettings:get('IconSize')),
                     resource = ui.texture { path = icon },
                 }
             }
@@ -48,6 +52,8 @@ local function showFollowedQuest(quest)
 
         return {}
     end
+
+    local note = #quest.notes > 0 and quest.notes[1] or "No Information Found"
 
     local uiWindow = {
         type = ui.TYPE.Container,
@@ -93,7 +99,7 @@ local function showFollowedQuest(quest)
                                                 props = {
                                                     text = quest.name,
                                                     textColor = util.color.rgb(1, 1, 1),
-                                                    textSize = 15,
+                                                    textSize = playerCustomizationSettings:get('HeadlineSize'),
                                                     textAlignH = ui.ALIGNMENT.Start
                                                 },
                                             }
@@ -103,8 +109,8 @@ local function showFollowedQuest(quest)
                                         template = I.MWUI.templates.textParagraph,
                                         props = {
                                             size = util.vector2(600, 10),
-                                            text = quest.notes[1],
-                                            textSize = 13,
+                                            text = note,
+                                            textSize = playerCustomizationSettings:get('TextSize'),
                                         },
                                     }
                                 }

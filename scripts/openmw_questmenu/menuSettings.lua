@@ -28,10 +28,17 @@ I.Settings.registerGroup {
     key = 'SettingsPlayerOpenMWQuestMenuCustomization',
     page = 'OpenMWQuestMenuPage',
     l10n = 'OpenMWQuestMenu',
-    name = 'Followed Quest Customization',
+    name = 'Customization',
     description = 'You may need to refollow the quest to see changes.',
     permanentStorage = true,
     settings = {
+        {
+            key = 'MaxWidth',
+            renderer = 'number',
+            name = 'Widget Max Width',
+            description = 'Sets the maximum width of the quest menu. Only updates on loading save game or restart.',
+            default = 850,
+        },
         {
             key = 'IconSize',
             renderer = 'number',

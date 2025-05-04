@@ -11,6 +11,7 @@ local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 local v2 = util.vector2
 
 local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuControls')
+local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuCustomization')
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
@@ -22,6 +23,10 @@ local width_ratio = 0.5
 local height_ratio = 0.65
 local widget_width = screenSize.x * width_ratio
 local widget_height = screenSize.y * height_ratio
+
+if (widget_width > playerCustomizationSettings:get('MaxWidth')) then
+    widget_width = playerCustomizationSettings:get('MaxWidth')
+end
 
 local icon_size = screenSize.y * 0.03
 local menu_block_width = widget_width * 0.30

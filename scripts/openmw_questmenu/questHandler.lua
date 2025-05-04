@@ -61,15 +61,10 @@ local function showFollowedQuest(quest)
         template = I.MWUI.templates.boxSolid,
         props = {
             position = util.vector2(10, 10),
-            relativeSize = util.vector2(.5, .5),
-            size = util.vector2(1000, 200)
         },
         content = ui.content {
             {
                 type = ui.TYPE.Flex,
-                props = {
-                    relativeSize = util.vector2(.5, .5)
-                },
                 content = ui.content {
 
                     {

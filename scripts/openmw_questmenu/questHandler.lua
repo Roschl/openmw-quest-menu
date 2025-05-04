@@ -1,8 +1,123 @@
 local self = require("openmw.self")
 local core = require("openmw.core")
+local I = require('openmw.interfaces')
 local types = require("openmw.types")
+local ui = require('openmw.ui')
+local util = require('openmw.util')
+local vfs = require('openmw.vfs')
 
 local questList = {}
+local followedQuest = nil
+
+local function getFollowedQuest(quests)
+    for _, quest in pairs(quests) do
+        if quest.followed == true then
+            return quest
+        end
+    end
+
+    return nil
+end
+
+local function showFollowedQuest(quest)
+    if quest == nil then
+        return
+    end
+
+    if (followedQuest ~= nil) then
+        followedQuest:destroy()
+        followedQuest = nil
+    end
+
+
+
+    local function createIcon()
+        if I.SSQN then
+            local icon = I.SSQN.getQIcon(quest.id)
+
+            if not vfs.fileExists(icon) then icon = "Icons\\SSQN\\DEFAULT.dds" end
+
+            return {
+                type = ui.TYPE.Image,
+                props = {
+                    size = util.vector2(32, 32),
+                    resource = ui.texture { path = icon },
+                }
+            }
+        end
+
+        return {}
+    end
+
+    local uiWindow = {
+        type = ui.TYPE.Container,
+        layer = 'Windows',
+        template = I.MWUI.templates.boxSolid,
+        props = {
+            position = util.vector2(10, 10),
+            relativeSize = util.vector2(.5, .5),
+            size = util.vector2(1000, 200)
+        },
+        content = ui.content {
+            {
+                type = ui.TYPE.Flex,
+                props = {
+                    relativeSize = util.vector2(.5, .5)
+                },
+                content = ui.content {
+
+                    {
+                        type = ui.TYPE.Flex,
+                        props = {
+                            horizontal = true
+                        },
+                        content = ui.content {
+                            createIcon(),
+                            {
+                                type = ui.TYPE.Widget,
+                                props = {
+                                    size = util.vector2(10, 6)
+                                }
+                            },
+                            {
+                                type = ui.TYPE.Flex,
+                                content = ui.content {
+                                    {
+                                        type = ui.TYPE.Flex,
+                                        props = {
+                                            horizontal = true
+                                        },
+                                        content = ui.content {
+                                            {
+                                                type = ui.TYPE.Text,
+                                                props = {
+                                                    text = quest.name,
+                                                    textColor = util.color.rgb(1, 1, 1),
+                                                    textSize = 15,
+                                                    textAlignH = ui.ALIGNMENT.Start
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        template = I.MWUI.templates.textParagraph,
+                                        props = {
+                                            size = util.vector2(600, 10),
+                                            text = quest.notes[1],
+                                            textSize = 13,
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    followedQuest = ui.create(uiWindow)
+end
 
 local function findDialogueWithStage(dialogueTable, targetStage)
     local filteredDialogue = nil
@@ -14,6 +129,34 @@ local function findDialogueWithStage(dialogueTable, targetStage)
     end
 
     return filteredDialogue
+end
+
+local function followQuest(qid)
+    local newFollowedQuest = nil
+    local newQuestList = {}
+
+    for _, quest in ipairs(questList) do
+        if quest.id == qid then
+            newFollowedQuest = quest
+            newFollowedQuest.followed = not quest.followed
+            table.insert(newQuestList, newFollowedQuest)
+        else
+            quest.followed = false
+            table.insert(newQuestList, quest)
+        end
+    end
+
+    if (newFollowedQuest ~= nil and newFollowedQuest.followed) then
+        showFollowedQuest(newFollowedQuest)
+    end
+
+    if (followedQuest and (newFollowedQuest == nil or not newFollowedQuest.followed)) then
+        followedQuest:destroy()
+        followedQuest = nil
+    end
+
+    questList = newQuestList
+    return newQuestList
 end
 
 local function toggleQuest(qid)
@@ -47,6 +190,7 @@ local function onLoadMidGame()
             stage = quest.stage,
             hidden = false,
             finished = quest.finished,
+            followed = false,
             notes = {}
         }
         table.insert(newQuest.notes, 1, dialogueRecordInfo.text)
@@ -96,6 +240,7 @@ local function onQuestUpdate(questId, stage)
             stage = stage,
             hidden = false,
             finished = isFinished,
+            followed = false,
             notes = {}
         }
 
@@ -104,6 +249,7 @@ local function onQuestUpdate(questId, stage)
     end
 
     questList = newQuestList
+    showFollowedQuest(getFollowedQuest(newQuestList))
 end
 
 local function onSave()
@@ -119,6 +265,7 @@ local function onLoad(data)
     end
 
     questList = data.questList
+    showFollowedQuest(getFollowedQuest(data.questList))
 end
 
 local function getQuestList()
@@ -129,6 +276,7 @@ return {
     interfaceName = 'OpenMWQuestList',
     interface = {
         getQuestList = getQuestList,
+        followQuest = followQuest,
         toggleQuest = toggleQuest
     },
     engineHandlers = {

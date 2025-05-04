@@ -438,6 +438,22 @@ createQuestMenu = function(page, quests)
         end
     end, questMode == "ACTIVE")
 
+    local function createButtonFollow()
+        if (not selectedQuest) then
+            return {}
+        end
+
+        local text = selectedQuest.followed and "Unfollow" or "Follow"
+
+        return UIComponents.createButton(text, 100, topButtonHeight, nil, v2(0, .5), function()
+            if questMenu and selectedQuest then
+                questMenu:destroy()
+                questMenu = nil
+                createQuestMenu(page, I.OpenMWQuestList.followQuest(selectedQuest.id))
+            end
+        end)
+    end
+
     local function createButtonHide()
         if (not selectedQuest or questMode == "FINISHED") then
             return {}
@@ -514,7 +530,9 @@ createQuestMenu = function(page, quests)
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyHBox,
                                 UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
-                                    createButtonHide()
+                                    createButtonHide(),
+                                    buttonTopGap,
+                                    createButtonFollow()
                                 })),
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyHBox,

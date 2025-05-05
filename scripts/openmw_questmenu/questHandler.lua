@@ -43,8 +43,8 @@ local function showFollowedQuest(quest)
             return {
                 type = ui.TYPE.Image,
                 props = {
-                    size = util.vector2(playerCustomizationSettings:get('IconSize'),
-                        playerCustomizationSettings:get('IconSize')),
+                    size = util.vector2(playerCustomizationSettings:get('FIconSize'),
+                        playerCustomizationSettings:get('FIconSize')),
                     resource = ui.texture { path = icon },
                 }
             }
@@ -94,7 +94,7 @@ local function showFollowedQuest(quest)
                                                 props = {
                                                     text = quest.name,
                                                     textColor = util.color.rgb(1, 1, 1),
-                                                    textSize = playerCustomizationSettings:get('HeadlineSize'),
+                                                    textSize = playerCustomizationSettings:get('FHeadlineSize'),
                                                     textAlignH = ui.ALIGNMENT.Start
                                                 },
                                             }
@@ -105,7 +105,7 @@ local function showFollowedQuest(quest)
                                         props = {
                                             size = util.vector2(600, 10),
                                             text = note,
-                                            textSize = playerCustomizationSettings:get('TextSize'),
+                                            textSize = playerCustomizationSettings:get('FTextSize'),
                                         },
                                     }
                                 }

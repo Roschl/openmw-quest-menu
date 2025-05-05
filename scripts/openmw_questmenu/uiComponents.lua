@@ -4,8 +4,6 @@ local async = require('openmw.async')
 local I = require('openmw.interfaces')
 local v2 = util.vector2
 
-local textSize = 13.5
-
 local function createBox(width, height, content)
     return {
         name = "mainWindowWidget",
@@ -31,7 +29,7 @@ local function createBox(width, height, content)
     }
 end
 
-local function createButton(text, width, height, relativePosition, anchor, callback, highlight)
+local function createButton(text, textSize, width, height, relativePosition, anchor, callback, highlight)
     local defaultWidth = 100
     local defaultHeight = 25
 
@@ -53,7 +51,7 @@ local function createButton(text, width, height, relativePosition, anchor, callb
                     anchor = v2(.5, .5),
                     relativePosition = v2(.5, .5),
                     text = text,
-                    textSize = textSize + 1,
+                    textSize = textSize,
                     textColor = highlight and util.color.rgb(255, 255, 255) or nil
                 }
             }

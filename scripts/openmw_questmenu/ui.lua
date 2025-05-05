@@ -15,7 +15,8 @@ local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQ
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
-local text_size = 15
+local text_size = playerCustomizationSettings:get('TextSize')
+local buttonWidth = text_size * 6
 local showable = nil
 
 local screenSize = ui.screenSize()
@@ -23,6 +24,8 @@ local width_ratio = 0.5
 local height_ratio = 0.65
 local widget_width = screenSize.x * width_ratio
 local widget_height = screenSize.y * height_ratio
+
+local icon_size = screenSize.y * 0.03
 
 if (widget_width > playerCustomizationSettings:get('MaxWidth')) then
     widget_width = playerCustomizationSettings:get('MaxWidth')
@@ -32,16 +35,33 @@ if (widget_height > playerCustomizationSettings:get('MaxHeight')) then
     widget_height = playerCustomizationSettings:get('MaxHeight')
 end
 
-local contentHeight = widget_height - 110
+if (icon_size > playerCustomizationSettings:get('MaxIconSize')) then
+    icon_size = playerCustomizationSettings:get('MaxIconSize')
+end
 
-local icon_size = screenSize.y * 0.03
+local vertical_block_size = icon_size + 5
+local contentHeight = widget_height - (3 * vertical_block_size)
 local menu_block_width = widget_width * 0.30
 
 local createQuestMenu
 local selectedQuest = nil
 
-local questsPerPage = math.floor(contentHeight / icon_size)
+local questsPerPage = math.floor(contentHeight / vertical_block_size)
 local detailPage = 1
+
+local emptyVBox = {
+    type = ui.TYPE.Widget,
+    props = {
+        size = v2(widget_width * 0.5, 6)
+    }
+}
+
+local emptyHBox = {
+    type = ui.TYPE.Widget,
+    props = {
+        size = v2(7, vertical_block_size)
+    }
+}
 
 local function selectQuest(quest, page)
     selectedQuest = quest
@@ -91,23 +111,16 @@ local function createQuest(quest, page)
         }
     }
 
-    local emptyVBox = {
-        type = ui.TYPE.Widget,
-        props = {
-            size = v2(7, 50)
-        }
-    }
-
     local function createContent()
         if (icon ~= nil) then
             return {
                 questLogo,
-                emptyVBox,
+                emptyHBox,
                 questNameText
             }
         end
 
-        return { emptyVBox, questNameText }
+        return { emptyHBox, questNameText }
     end
 
     return {
@@ -196,6 +209,7 @@ local function createQuestDetail()
                 multiline = true,
                 wordWrap = true,
                 autoSize = false,
+                textSize = text_size,
             }
         }
     }
@@ -251,17 +265,18 @@ createQuestMenu = function(page, quests)
                     size = v2(widget_width * 0.4, 20),
                     anchor = v2(.5, .5)
                 },
-                content = ui.content { {
-                    template = I.MWUI.templates.textNormal,
-                    type = ui.TYPE.Text,
-                    props = {
-                        anchor = v2(.5, .5),
-                        relativePosition = v2(.5, .5),
-                        text = "Quest Menu",
-                        textColor = util.color.rgb(255, 255, 255),
-                        textSize = text_size,
+                content = ui.content {
+                    {
+                        type = ui.TYPE.Text,
+                        props = {
+                            anchor = v2(.5, .5),
+                            relativePosition = v2(.5, .5),
+                            text = "Quest Menu",
+                            textColor = util.color.rgb(255, 255, 255),
+                            textSize = text_size,
+                        }
                     }
-                } }
+                }
             },
             {
                 type = ui.TYPE.Image,
@@ -273,13 +288,6 @@ createQuestMenu = function(page, quests)
                         size = v2(menu_block_width, 15) }
                 }
             }
-        }
-    }
-
-    local emptyHBox = {
-        type = ui.TYPE.Widget,
-        props = {
-            size = v2(300, 6)
         }
     }
 
@@ -322,7 +330,7 @@ createQuestMenu = function(page, quests)
             return {}
         end
 
-        return UIComponents.createButton(text, 80, topButtonHeight, relativePosition, anchor,
+        return UIComponents.createButton(text, text_size, buttonWidth - 20, topButtonHeight, relativePosition, anchor,
             function()
                 if questMenu then
                     questMenu:destroy()
@@ -344,7 +352,7 @@ createQuestMenu = function(page, quests)
             return {}
         end
 
-        return UIComponents.createButton(text, 80, topButtonHeight, relativePosition, anchor,
+        return UIComponents.createButton(text, text_size, buttonWidth - 20, topButtonHeight, relativePosition, anchor,
             function()
                 if questMenu then
                     questMenu:destroy()
@@ -366,7 +374,7 @@ createQuestMenu = function(page, quests)
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
             text = createPageText(),
-            textSize = text_size + 4
+            textSize = text_size
         }
     }
 
@@ -385,7 +393,7 @@ createQuestMenu = function(page, quests)
             anchor = v2(.5, .5),
             relativePosition = v2(.5, .5),
             text = createDetailPageText(),
-            textSize = text_size + 4
+            textSize = text_size
         }
     }
 
@@ -419,35 +427,38 @@ createQuestMenu = function(page, quests)
         })
     }
 
-    local buttonHidden = UIComponents.createButton("Hidden", 100, topButtonHeight, nil, v2(0, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            selectedQuest = nil
-            questMode = "HIDDEN"
-            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
-        end
-    end, questMode == "HIDDEN")
+    local buttonHidden = UIComponents.createButton("Hidden", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+        function()
+            if questMenu then
+                questMenu:destroy()
+                questMenu = nil
+                selectedQuest = nil
+                questMode = "HIDDEN"
+                createQuestMenu(1, I.OpenMWQuestList.getQuestList())
+            end
+        end, questMode == "HIDDEN")
 
-    local buttonFinished = UIComponents.createButton("Finished", 100, topButtonHeight, nil, v2(0, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            selectedQuest = nil
-            questMode = "FINISHED"
-            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
-        end
-    end, questMode == "FINISHED")
+    local buttonFinished = UIComponents.createButton("Finished", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+        function()
+            if questMenu then
+                questMenu:destroy()
+                questMenu = nil
+                selectedQuest = nil
+                questMode = "FINISHED"
+                createQuestMenu(1, I.OpenMWQuestList.getQuestList())
+            end
+        end, questMode == "FINISHED")
 
-    local buttonActive = UIComponents.createButton("Active", 100, topButtonHeight, nil, v2(0, .5), function()
-        if questMenu then
-            questMenu:destroy()
-            questMenu = nil
-            selectedQuest = nil
-            questMode = "ACTIVE"
-            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
-        end
-    end, questMode == "ACTIVE")
+    local buttonActive = UIComponents.createButton("Active", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+        function()
+            if questMenu then
+                questMenu:destroy()
+                questMenu = nil
+                selectedQuest = nil
+                questMode = "ACTIVE"
+                createQuestMenu(1, I.OpenMWQuestList.getQuestList())
+            end
+        end, questMode == "ACTIVE")
 
     local function createButtonFollow()
         if (not selectedQuest) then
@@ -456,7 +467,7 @@ createQuestMenu = function(page, quests)
 
         local text = selectedQuest.followed and "Unfollow" or "Follow"
 
-        return UIComponents.createButton(text, 100, topButtonHeight, nil, v2(0, .5), function()
+        return UIComponents.createButton(text, text_size, buttonWidth, topButtonHeight, nil, v2(0, .5), function()
             if questMenu and selectedQuest then
                 questMenu:destroy()
                 questMenu = nil
@@ -472,7 +483,7 @@ createQuestMenu = function(page, quests)
 
         local text = selectedQuest.hidden and "Show" or "Hide"
 
-        return UIComponents.createButton(text, 100, topButtonHeight, nil, v2(0, .5), function()
+        return UIComponents.createButton(text, text_size, buttonWidth, topButtonHeight, nil, v2(0, .5), function()
             if questMenu and selectedQuest then
                 questMenu:destroy()
                 questMenu = nil
@@ -523,7 +534,7 @@ createQuestMenu = function(page, quests)
                         },
                         content = ui.content {
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
-                                emptyHBox,
+                                emptyVBox,
                                 UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
                                     buttonActive,
                                     buttonTopGap,
@@ -532,24 +543,24 @@ createQuestMenu = function(page, quests)
                                     buttonHidden
                                 })),
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
-                                emptyHBox,
+                                emptyVBox,
                                 questBox,
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
-                                emptyHBox,
+                                emptyVBox,
                                 buttonsBox
                             }),
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
-                                emptyHBox,
+                                emptyVBox,
                                 UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
                                     createButtonHide(),
                                     buttonTopGap,
                                     createButtonFollow()
                                 })),
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
-                                emptyHBox,
+                                emptyVBox,
                                 questDetailBox,
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
-                                emptyHBox,
+                                emptyVBox,
                                 buttonsBoxDetails
                             })
                         }

@@ -28,13 +28,19 @@ if (widget_width > playerCustomizationSettings:get('MaxWidth')) then
     widget_width = playerCustomizationSettings:get('MaxWidth')
 end
 
+if (widget_height > playerCustomizationSettings:get('MaxHeight')) then
+    widget_height = playerCustomizationSettings:get('MaxHeight')
+end
+
+local contentHeight = widget_height - 110
+
 local icon_size = screenSize.y * 0.03
 local menu_block_width = widget_width * 0.30
 
 local createQuestMenu
 local selectedQuest = nil
 
-local questsPerPage = 12
+local questsPerPage = math.floor(contentHeight / icon_size)
 local detailPage = 1
 
 local function selectQuest(quest, page)
@@ -293,7 +299,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(.25, .5),
             relativePosition = v2(.25, .5),
-            size = v2(widget_width / 2 * 0.85, icon_size * 16)
+            size = v2(widget_width / 2 * 0.85, contentHeight)
         },
         content = ui.content({ questList })
     }
@@ -303,7 +309,7 @@ createQuestMenu = function(page, quests)
         props = {
             anchor = v2(1, .5),
             relativePosition = v2(1, .5),
-            size = v2(widget_width / 2 * 0.85, icon_size * 16)
+            size = v2(widget_width / 2 * 0.85, contentHeight)
         },
         content = createQuestDetail()
     }

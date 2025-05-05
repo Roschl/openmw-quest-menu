@@ -40,6 +40,13 @@ I.Settings.registerGroup {
             default = 850,
         },
         {
+            key = 'MaxHeight',
+            renderer = 'number',
+            name = 'Widget Max Width',
+            description = 'Sets the maximum height of the quest menu. Only updates on loading save game or restart.',
+            default = 1000,
+        },
+        {
             key = 'IconSize',
             renderer = 'number',
             name = 'Details Quest Icon Size',

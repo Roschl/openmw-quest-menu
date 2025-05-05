@@ -16,28 +16,16 @@ local function createBox(width, height, content)
         },
         content = ui.content {
             {
-                type = ui.TYPE.Widget,
+                type = ui.TYPE.Flex,
                 props = {
-                    name = "pluginBoxPadding",
-                    size = v2(width, height)
+                    anchor = v2(.5, 0),
+                    relativePosition = v2(.5, 0),
+                    name = "pluginBoxFlex",
+                    horizontal = false,
+                    align = ui.ALIGNMENT.Start,
+                    arrange = ui.ALIGNMENT.Center
                 },
-                content = ui.content {
-                    {
-                        type = ui.TYPE.Flex,
-                        props = {
-                            anchor = v2(.5, .5),
-                            relativePosition = v2(.5, .5),
-                            name = "pluginBoxFlex",
-                            horizontal = false,
-                            align = ui.ALIGNMENT.Start,
-                            arrange = ui.ALIGNMENT.Center
-                        },
-                        external = {
-                            stretch = 0.4
-                        },
-                        content = content
-                    }
-                }
+                content = content
             }
         }
     }

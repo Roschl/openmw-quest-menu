@@ -242,6 +242,11 @@ local function onQuestUpdate(questId, stage)
             table.insert(quest.stages, 1, stage)
         end
 
+        -- Unfollow quest when it is finished
+        if quest.followed and isFinished then
+            followQuest(qid)
+        end
+
         table.insert(newQuestList, quest)
     end
 

@@ -11,7 +11,7 @@ I.Settings.registerGroup {
     key = 'SettingsPlayerOpenMWQuestMenuControls',
     page = 'OpenMWQuestMenuPage',
     l10n = 'OpenMWQuestMenu',
-    name = 'Controls',
+    name = 'Options',
     permanentStorage = true,
     settings = {
         {
@@ -20,7 +20,14 @@ I.Settings.registerGroup {
             name = 'Open Menu',
             description = 'Key to open menu.',
             default = 'x',
-        }
+        },
+        {
+            key = 'PlaySound',
+            renderer = "checkbox",
+            name = 'Play Sound',
+            description = 'Plays the journal sound when closing or opening the quest menu.',
+            default = true,
+        },
     },
 }
 

@@ -5,6 +5,7 @@ local I = require('openmw.interfaces')
 local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
 local async = require('openmw.async')
+local ambient = require("openmw.ambient")
 
 local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
@@ -579,11 +580,17 @@ local function onKeyPress(key)
     if key.symbol == playerSettings:get('OpenMenu') then
         if showable == nil then
             I.UI.setMode('Interface', { windows = {} })
+            if playerSettings:get('PlaySound') then
+                ambient.playSoundFile("Sound\\Fx\\item\\bookopen.wav", { volume = 0.4 })
+            end
             createQuestMenu(1, I.OpenMWQuestList.getQuestList())
             showable = true
         else
             I.UI.removeMode('Interface')
             if (questMenu) then
+                if playerSettings:get('PlaySound') then
+                    ambient.playSoundFile("Sound\\Fx\\item\\bookclose.wav", { volume = 0.4 })
+                end
                 questMenu:destroy()
                 questMenu = nil;
             end

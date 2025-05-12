@@ -187,16 +187,18 @@ local function onLoadMidGame()
     for _, quest in pairs(types.Player.quests(self)) do
         local dialogueRecord = core.dialogue.journal.records[quest.id]
 
-        local newQuest = {
-            id = quest.id,
-            name = dialogueRecord.questName,
-            hidden = false,
-            finished = quest.finished,
-            followed = false,
-            stages = {}
-        }
-        table.insert(newQuest.stages, 1, quest.stage)
-        table.insert(newQuestList, newQuest)
+        if dialogueRecord.questName and dialogueRecord.questName ~= "" then
+            local newQuest = {
+                id = quest.id,
+                name = dialogueRecord.questName,
+                hidden = false,
+                finished = quest.finished,
+                followed = false,
+                stages = {}
+            }
+            table.insert(newQuest.stages, 1, quest.stage)
+            table.insert(newQuestList, newQuest)
+        end
     end
 
     questList.quests = newQuestList
@@ -213,8 +215,10 @@ local function onUpdateToNewVersion(oldList)
             quest.notes = nil
             quest.stages = {}
 
-            table.insert(quest.stages, quest.stage)
-            table.insert(newQuestList.quests, quest)
+            if (quest.name and quest.name ~= "") then
+                table.insert(quest.stages, quest.stage)
+                table.insert(newQuestList.quests, quest)
+            end
         end
     end
 
@@ -251,7 +255,7 @@ local function onQuestUpdate(questId, stage)
     end
 
     -- If Quest doesnt exist yet, add new list entry:
-    if (questExists == false) then
+    if (questExists == false and dialogueRecord.questName and dialogueRecord.questName ~= "") then
         local newQuest = {
             id = qid,
             name = dialogueRecord.questName,

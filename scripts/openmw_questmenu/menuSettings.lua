@@ -28,6 +28,13 @@ I.Settings.registerGroup {
             description = 'Plays the journal sound when closing or opening the quest menu.',
             default = true,
         },
+        {
+            key = 'Debugging',
+            renderer = "checkbox",
+            name = 'Debugging',
+            description = 'Shows additional information for quests.',
+            default = false,
+        },
     },
 }
 

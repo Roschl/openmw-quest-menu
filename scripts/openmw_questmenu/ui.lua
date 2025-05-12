@@ -202,17 +202,36 @@ local function createQuestDetail()
     local stage = selectedQuest.stages[detailPage]
     local text = I.OpenMWQuestList.getQuestText(selectedQuest.id, stage)
 
+    local content = {}
+    if playerSettings:get('Debugging') == true then
+        table.insert(content, {
+            type = ui.TYPE.Text,
+            props = {
+                text = "id: " .. selectedQuest.id .. " / " .. "stage: " .. stage,
+                textColor = util.color.rgb(255, 255, 255),
+                textSize = text_size,
+                autoSize = false,
+                size = v2((widget_width / 2 * 0.85), text_size * 2),
+            }
+        })
+    end
+
+    table.insert(content, {
+        template = I.MWUI.templates.textNormal,
+        props = {
+            text = text,
+            size = v2((widget_width / 2 * 0.85), contentHeight),
+            multiline = true,
+            wordWrap = true,
+            autoSize = false,
+            textSize = text_size,
+        }
+    })
+
     return ui.content {
         {
-            template = I.MWUI.templates.textNormal,
-            props = {
-                text = text,
-                size = v2((widget_width / 2 * 0.85), contentHeight),
-                multiline = true,
-                wordWrap = true,
-                autoSize = false,
-                textSize = text_size,
-            }
+            type = ui.TYPE.Flex,
+            content = ui.content(content)
         }
     }
 end

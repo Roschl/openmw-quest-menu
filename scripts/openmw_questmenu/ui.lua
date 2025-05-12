@@ -1,3 +1,4 @@
+local core = require("openmw.core")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
 local input = require('openmw.input')
@@ -6,6 +7,7 @@ local storage = require('openmw.storage')
 local vfs = require('openmw.vfs')
 local async = require('openmw.async')
 local ambient = require("openmw.ambient")
+local l10n = core.l10n("OpenMWQuestMenu")
 
 local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
@@ -191,7 +193,7 @@ local function createQuestDetail()
                 props = {
                     anchor = v2(.5, .5),
                     relativePosition = v2(.5, .5),
-                    text = "No Quest selected!",
+                    text = l10n("error_no_quest"),
                     textColor = util.color.rgb(255, 255, 255),
                     textSize = text_size,
                 }
@@ -292,7 +294,7 @@ createQuestMenu = function(page, quests)
                         props = {
                             anchor = v2(.5, .5),
                             relativePosition = v2(.5, .5),
-                            text = "Quest Menu",
+                            text = l10n("menu_title"),
                             textColor = util.color.rgb(255, 255, 255),
                             textSize = text_size,
                         }
@@ -344,7 +346,7 @@ createQuestMenu = function(page, quests)
     }
 
     local function createListNavigation(direction, relativePosition, anchor)
-        local text = direction == "+" and "Next" or "Back"
+        local text = direction == "+" and l10n("button_next") or l10n("button_back")
         local nextPage = direction == "+" and (page + 1) or (page - 1)
 
         if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > math.ceil(#filteredQuests / questsPerPage))) then
@@ -366,7 +368,7 @@ createQuestMenu = function(page, quests)
             return {}
         end
 
-        local text = direction == "+" and "Next" or "Back"
+        local text = direction == "+" and l10n("button_next") or l10n("button_back")
         local nextPage = direction == "+" and (detailPage + 1) or (detailPage - 1)
 
         if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.stages)) then
@@ -448,7 +450,8 @@ createQuestMenu = function(page, quests)
         })
     }
 
-    local buttonHidden = UIComponents.createButton("Hidden", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+    local buttonHidden = UIComponents.createButton(l10n("button_hidden"), text_size, buttonWidth, topButtonHeight, nil,
+        v2(0, .5),
         function()
             if questMenu then
                 questMenu:destroy()
@@ -459,7 +462,8 @@ createQuestMenu = function(page, quests)
             end
         end, questMode == "HIDDEN")
 
-    local buttonFinished = UIComponents.createButton("Finished", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+    local buttonFinished = UIComponents.createButton(l10n("button_finished"), text_size, buttonWidth, topButtonHeight,
+        nil, v2(0, .5),
         function()
             if questMenu then
                 questMenu:destroy()
@@ -470,7 +474,8 @@ createQuestMenu = function(page, quests)
             end
         end, questMode == "FINISHED")
 
-    local buttonActive = UIComponents.createButton("Active", text_size, buttonWidth, topButtonHeight, nil, v2(0, .5),
+    local buttonActive = UIComponents.createButton(l10n("button_active"), text_size, buttonWidth, topButtonHeight, nil,
+        v2(0, .5),
         function()
             if questMenu then
                 questMenu:destroy()
@@ -486,7 +491,7 @@ createQuestMenu = function(page, quests)
             return {}
         end
 
-        local text = selectedQuest.followed and "Unfollow" or "Follow"
+        local text = selectedQuest.followed and l10n("button_unfollow") or l10n("button_follow")
 
         return UIComponents.createButton(text, text_size, buttonWidth, topButtonHeight, nil, v2(0, .5), function()
             if questMenu and selectedQuest then
@@ -502,7 +507,7 @@ createQuestMenu = function(page, quests)
             return {}
         end
 
-        local text = selectedQuest.hidden and "Show" or "Hide"
+        local text = selectedQuest.hidden and l10n("button_show") or l10n("button_hide")
 
         return UIComponents.createButton(text, text_size, buttonWidth, topButtonHeight, nil, v2(0, .5), function()
             if questMenu and selectedQuest then

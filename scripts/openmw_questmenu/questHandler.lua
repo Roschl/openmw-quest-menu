@@ -7,10 +7,32 @@ local ui = require('openmw.ui')
 local util = require('openmw.util')
 local vfs = require('openmw.vfs')
 
-local questList = {}
+local modVersion = "1.1.0"
+
+local questList = {
+    quests = {},
+    version = modVersion
+}
 local followedQuest = nil
 
 local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuCustomization')
+
+local function getQuestText(questId, stage)
+    local dialogueRecord = core.dialogue.journal.records[questId]
+
+    local filteredDialogue = nil
+    for _, dialogue in pairs(dialogueRecord.infos) do
+        if dialogue.questStage == stage then
+            filteredDialogue = dialogue
+        end
+    end
+
+    if filteredDialogue == nil then
+        return "Error: No information found."
+    end
+
+    return filteredDialogue.text
+end
 
 local function getFollowedQuest(quests)
     for _, quest in pairs(quests) do
@@ -32,8 +54,6 @@ local function showFollowedQuest(quest)
         followedQuest = nil
     end
 
-
-
     local function createIcon()
         if I.SSQN then
             local icon = I.SSQN.getQIcon(quest.id)
@@ -53,7 +73,8 @@ local function showFollowedQuest(quest)
         return {}
     end
 
-    local note = #quest.notes > 0 and quest.notes[1] or "No Information Found"
+    local stage = #quest.stages > 0 and quest.stages[1] or "No Information Found"
+    local text = getQuestText(quest.id, stage)
 
     local uiWindow = {
         type = ui.TYPE.Container,
@@ -104,7 +125,7 @@ local function showFollowedQuest(quest)
                                         template = I.MWUI.templates.textParagraph,
                                         props = {
                                             size = util.vector2(600, 10),
-                                            text = note,
+                                            text = text,
                                             textSize = playerCustomizationSettings:get('FTextSize'),
                                         },
                                     }
@@ -120,23 +141,11 @@ local function showFollowedQuest(quest)
     followedQuest = ui.create(uiWindow)
 end
 
-local function findDialogueWithStage(dialogueTable, targetStage)
-    local filteredDialogue = nil
-
-    for _, dialogue in pairs(dialogueTable) do
-        if dialogue.questStage == targetStage then
-            filteredDialogue = dialogue
-        end
-    end
-
-    return filteredDialogue
-end
-
 local function followQuest(qid)
     local newFollowedQuest = nil
     local newQuestList = {}
 
-    for _, quest in ipairs(questList) do
+    for _, quest in ipairs(questList.quests) do
         if quest.id == qid then
             newFollowedQuest = quest
             newFollowedQuest.followed = not quest.followed
@@ -156,20 +165,20 @@ local function followQuest(qid)
         followedQuest = nil
     end
 
-    questList = newQuestList
+    questList.quests = newQuestList
     return newQuestList
 end
 
 local function toggleQuest(qid)
     local newQuestList = {};
-    for _, quest in ipairs(questList) do
+    for _, quest in ipairs(questList.quests) do
         if quest.id == qid then
             quest.hidden = not quest.hidden
         end
 
         table.insert(newQuestList, quest)
     end
-    questList = newQuestList
+    questList.quests = newQuestList
 end
 
 local function onLoadMidGame()
@@ -177,25 +186,36 @@ local function onLoadMidGame()
 
     for _, quest in pairs(types.Player.quests(self)) do
         local dialogueRecord = core.dialogue.journal.records[quest.id]
-        local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, quest.stage)
-
-        if dialogueRecordInfo == nil then
-            dialogueRecordInfo = {
-                text = "No Information Found"
-            }
-        end
 
         local newQuest = {
             id = quest.id,
             name = dialogueRecord.questName,
-            stage = quest.stage,
             hidden = false,
             finished = quest.finished,
             followed = false,
-            notes = {}
+            stages = {}
         }
-        table.insert(newQuest.notes, 1, dialogueRecordInfo.text)
+        table.insert(newQuest.stages, 1, quest.stage)
         table.insert(newQuestList, newQuest)
+    end
+
+    questList.quests = newQuestList
+end
+
+local function onUpdateToNewVersion(oldList)
+    local newQuestList = {
+        quests = {},
+        version = modVersion
+    };
+
+    if (not oldList.version) then
+        for _, quest in ipairs(oldList) do
+            quest.notes = nil
+            quest.stages = {}
+
+            table.insert(quest.stages, quest.stage)
+            table.insert(newQuestList.quests, quest)
+        end
     end
 
     questList = newQuestList
@@ -211,23 +231,15 @@ local function onQuestUpdate(questId, stage)
 
     local qid = questId:lower()
     local dialogueRecord = core.dialogue.journal.records[qid]
-    local dialogueRecordInfo = findDialogueWithStage(dialogueRecord.infos, stage)
-
-    if dialogueRecordInfo == nil then
-        dialogueRecordInfo = {
-            text = "No Information Found"
-        }
-    end
 
     local questExists = false;
     local newQuestList = {};
-    for _, quest in ipairs(questList) do
+    for _, quest in ipairs(questList.quests) do
         -- If Quest already exists just update it:
         if quest.id == qid then
             questExists = true
-            quest.stage = stage
             quest.finished = isFinished
-            table.insert(quest.notes, 1, dialogueRecordInfo.text)
+            table.insert(quest.stages, 1, stage)
         end
 
         table.insert(newQuestList, quest)
@@ -238,18 +250,17 @@ local function onQuestUpdate(questId, stage)
         local newQuest = {
             id = qid,
             name = dialogueRecord.questName,
-            stage = stage,
             hidden = false,
             finished = isFinished,
             followed = false,
-            notes = {}
+            stages = {}
         }
 
-        table.insert(newQuest.notes, dialogueRecordInfo.text)
+        table.insert(newQuest.stages, stage)
         table.insert(newQuestList, 1, newQuest)
     end
 
-    questList = newQuestList
+    questList.quests = newQuestList
     showFollowedQuest(getFollowedQuest(newQuestList))
 end
 
@@ -260,23 +271,30 @@ local function onSave()
 end
 
 local function onLoad(data)
-    if not data or not data.questList or #data.questList == 0 then
+    if not data or not data.questList then
         onLoadMidGame()
         return
     end
 
+    -- Legacy Support
+    if not data.questList.version or data.questList.version ~= modVersion then
+        onUpdateToNewVersion(data.questList)
+        return
+    end
+
     questList = data.questList
-    showFollowedQuest(getFollowedQuest(data.questList))
+    showFollowedQuest(getFollowedQuest(data.questList.quests))
 end
 
 local function getQuestList()
-    return questList
+    return questList.quests
 end
 
 return {
     interfaceName = 'OpenMWQuestList',
     interface = {
         getQuestList = getQuestList,
+        getQuestText = getQuestText,
         followQuest = followQuest,
         toggleQuest = toggleQuest
     },

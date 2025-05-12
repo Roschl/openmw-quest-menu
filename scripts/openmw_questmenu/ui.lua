@@ -198,14 +198,15 @@ local function createQuestDetail()
         }
     end
 
-    local note = selectedQuest.notes[detailPage]
+    local stage = selectedQuest.stages[detailPage]
+    local text = I.OpenMWQuestList.getQuestText(selectedQuest.id, stage)
 
     return ui.content {
         {
             template = I.MWUI.templates.textNormal,
             props = {
-                text = note,
-                size = v2((widget_width / 2 * 0.85), icon_size * 16),
+                text = text,
+                size = v2((widget_width / 2 * 0.85), contentHeight),
                 multiline = true,
                 wordWrap = true,
                 autoSize = false,
@@ -348,7 +349,7 @@ createQuestMenu = function(page, quests)
         local text = direction == "+" and "Next" or "Back"
         local nextPage = direction == "+" and (detailPage + 1) or (detailPage - 1)
 
-        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.notes)) then
+        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.stages)) then
             return {}
         end
 
@@ -383,7 +384,7 @@ createQuestMenu = function(page, quests)
             return tostring(detailPage);
         end
 
-        return tostring(detailPage) .. " / " .. tostring(#selectedQuest.notes)
+        return tostring(detailPage) .. " / " .. tostring(#selectedQuest.stages)
     end
 
     local detailPageText = {

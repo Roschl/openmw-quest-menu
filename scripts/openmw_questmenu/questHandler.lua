@@ -79,7 +79,7 @@ local function showFollowedQuest(quest)
     local uiWindow = {
         type = ui.TYPE.Container,
         layer = 'Windows',
-        template = I.MWUI.templates.boxSolid,
+        template = I.MWUI.templates.boxTransparentThick,
         props = {
             position = util.vector2(10, 10),
         },

@@ -95,6 +95,20 @@ I.Settings.registerGroup {
             description = 'Sets the size of the Quest description.',
             default = 12,
         },
+        {
+            key = 'FPosX',
+            renderer = 'number',
+            name = 'Followed Quest Position X',
+            description = 'Sets the horizontal position of the followed quest.',
+            default = 10,
+        },
+        {
+            key = 'FPosY',
+            renderer = 'number',
+            name = 'Followed Quest Position Y',
+            description = 'Sets the vertical position of the followed quest.',
+            default = 10,
+        },
     },
 }
 

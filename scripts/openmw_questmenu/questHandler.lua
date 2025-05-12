@@ -6,6 +6,7 @@ local types = require("openmw.types")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
 local vfs = require('openmw.vfs')
+local async = require('openmw.async')
 
 local modVersion = "1.1.0"
 
@@ -76,18 +77,20 @@ local function showFollowedQuest(quest)
     local stage = #quest.stages > 0 and quest.stages[1] or "No Information Found"
     local text = getQuestText(quest.id, stage)
 
-    local uiWindow = {
+    followedQuest = ui.create({
         type = ui.TYPE.Container,
         layer = 'Windows',
-        template = I.MWUI.templates.boxTransparentThick,
+        template = I.MWUI.templates.boxTransparent,
         props = {
-            position = util.vector2(10, 10),
+            position = util.vector2(
+                playerCustomizationSettings:get('FPosX'),
+                playerCustomizationSettings:get('FPosY')
+            ),
         },
         content = ui.content {
             {
                 type = ui.TYPE.Flex,
                 content = ui.content {
-
                     {
                         type = ui.TYPE.Flex,
                         props = {
@@ -135,10 +138,28 @@ local function showFollowedQuest(quest)
                     }
                 }
             }
+        },
+        events = {
+            mousePress = async:callback(function(coord, layout)
+                layout.userData.doDrag = true
+                layout.userData.lastMousePos = coord.position
+            end),
+            mouseRelease = async:callback(function(_, layout)
+                layout.userData.doDrag = false
+            end),
+            mouseMove = async:callback(function(coord, layout)
+                if followedQuest == nil or not layout.userData.doDrag then return end
+                local props = layout.props
+                props.position = props.position - (layout.userData.lastMousePos - coord.position)
+                followedQuest:update()
+                layout.userData.lastMousePos = coord.position
+            end),
+        },
+        userData = {
+            doDrag = false,
+            lastMousePos = nil,
         }
-    }
-
-    followedQuest = ui.create(uiWindow)
+    })
 end
 
 local function followQuest(qid)

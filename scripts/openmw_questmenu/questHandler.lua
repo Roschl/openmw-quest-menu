@@ -202,48 +202,48 @@ local function toggleQuest(qid)
     questList.quests = newQuestList
 end
 
-local function onLoadMidGame()
-    local newQuestList = {};
-
-    for _, quest in pairs(types.Player.quests(self)) do
-        local dialogueRecord = core.dialogue.journal.records[quest.id]
-
-        if dialogueRecord.questName and dialogueRecord.questName ~= "" then
-            local newQuest = {
-                id = quest.id,
-                name = dialogueRecord.questName,
-                hidden = false,
-                finished = quest.finished,
-                followed = false,
-                stages = {}
-            }
-            table.insert(newQuest.stages, 1, quest.stage)
-            table.insert(newQuestList, newQuest)
-        end
-    end
-
-    questList.quests = newQuestList
-end
-
-local function onUpdateToNewVersion(oldList)
-    local newQuestList = {
+local function onUpdateToNewVersion(oldListOrObject)
+    local newQuestListStructure = {
         quests = {},
         version = modVersion
     };
 
-    if (not oldList.version) then
-        for _, quest in ipairs(oldList) do
-            quest.notes = nil
-            quest.stages = {}
+    local questsArrayToMigrate
+    -- Heuristic to determine if oldListOrObject is the flat array or a versioned object
+    if (oldListOrObject.version == nil and type(oldListOrObject) == "table" and (#oldListOrObject > 0 or next(oldListOrObject) == nil) and oldListOrObject.quests == nil) then
+        -- It's likely the old flat array of quests if it has no .version and no .quests property,
+        -- and is either empty or its first numeric key is 1 (typical for ipairs).
+        questsArrayToMigrate = oldListOrObject
+    elseif oldListOrObject.quests then -- It's an older versioned object with a .quests array
+        questsArrayToMigrate = oldListOrObject.quests
+    else
+        core.sendGlobalEvent("OpenMWQuestList_MigrationWarning", "Unknown old data format during migration.")
+        questsArrayToMigrate = {} -- Safety: unknown format
+    end
 
-            if (quest.name and quest.name ~= "") then
-                table.insert(quest.stages, quest.stage)
-                table.insert(newQuestList.quests, quest)
+    for _, quest in ipairs(questsArrayToMigrate) do
+        -- Basic validation: ensure essential fields exist before trying to access them
+        if quest and quest.id and quest.name and quest.name ~= "" then
+            local migratedQuest = {
+                id = quest.id:lower(), -- Standardize ID to lowercase
+                name = quest.name,
+                hidden = quest.hidden or false,
+                finished = quest.finished or false,
+                followed = quest.followed or false,
+                stages = {}
+            }
+            if quest.stage then -- Old format might have a single 'stage'
+                table.insert(migratedQuest.stages, quest.stage)
+            elseif quest.stages and type(quest.stages) == "table" then -- Or it might already have a stages array
+                for _, s in ipairs(quest.stages) do table.insert(migratedQuest.stages, s) end
             end
+            table.insert(newQuestListStructure.quests, migratedQuest)
+        else
+            core.sendGlobalEvent("OpenMWQuestList_MigrationWarning", "Skipping invalid quest entry during migration: " .. (quest and quest.id or "unknown"))
         end
     end
 
-    questList = newQuestList
+    return newQuestListStructure
 end
 
 local function onQuestUpdate(questId, stage)
@@ -301,19 +301,116 @@ local function onSave()
 end
 
 local function onLoad(data)
-    if not data or not data.questList then
-        onLoadMidGame()
-        return
+    -- This will be the definitive list of quests for the current session,
+    -- ensuring all game quests are present and mod-specific data is merged.
+    local newSessionQuestList = {}
+
+    -- Step 1: Populate with current quests from the game (this is the baseline)
+    -- All quest IDs will be stored in lowercase internally for consistency.
+    for _, gameQuest in pairs(types.Player.quests(self)) do
+        local dialogueRecord = core.dialogue.journal.records[gameQuest.id:lower()] -- Use lowercase for lookup
+        if dialogueRecord and dialogueRecord.questName and dialogueRecord.questName ~= "" then
+            table.insert(newSessionQuestList, {
+                id = gameQuest.id:lower(), -- Store ID in lowercase
+                name = dialogueRecord.questName,
+                hidden = false, -- Default
+                finished = gameQuest.finished,
+                followed = false, -- Default
+                stages = {gameQuest.stage} -- Latest stage from game is initially the only one
+            })
+        end
     end
 
-    -- Legacy Support
-    if not data.questList.version or data.questList.version ~= modVersion then
-        onUpdateToNewVersion(data.questList)
-        return
+    local modDataFromSave = nil -- This will hold {quests={}, version=""} from save file after potential migration
+
+    if data and data.questList then
+        -- We have existing save data for this mod.
+        if not data.questList.version or data.questList.version ~= modVersion then
+            -- Perform version migration
+            core.log("OpenMWQuestList: Migrating data from old version " .. (data.questList.version or "unknown") .. " to " .. modVersion)
+            modDataFromSave = onUpdateToNewVersion(data.questList) -- Returns the migrated structure
+        else
+            -- Version matches, use the saved data directly
+            modDataFromSave = data.questList
+        end
+
+        -- Step 2: Merge modDataFromSave into newSessionQuestList
+        if modDataFromSave and modDataFromSave.quests then
+            local followedQuestIdFromSave = nil -- To track which quest was followed
+
+            -- Create a map of newSessionQuestList for efficient updating
+            local activeQuestsMap = {}
+            for _, activeQuest in ipairs(newSessionQuestList) do
+                activeQuestsMap[activeQuest.id] = activeQuest -- ID is already lowercase
+            end
+
+            for _, savedQuest in ipairs(modDataFromSave.quests) do
+                if savedQuest.id then -- Ensure savedQuest has an ID
+                    local liveQuestToUpdate = activeQuestsMap[savedQuest.id:lower()] -- Ensure lookup is lowercase
+                    if liveQuestToUpdate then
+                        -- Quest from save exists in current game. Merge mod-specific properties.
+                        liveQuestToUpdate.hidden = savedQuest.hidden
+                        liveQuestToUpdate.followed = savedQuest.followed -- Tentatively set
+
+                        if liveQuestToUpdate.followed then
+                            if followedQuestIdFromSave then
+                                core.log("OpenMWQuestList Warning: Multiple followed quests found in save data. Using last one: " .. liveQuestToUpdate.id)
+                            end
+                            followedQuestIdFromSave = liveQuestToUpdate.id
+                        end
+
+                        -- Merge stages: Game's current stage (already in liveQuestToUpdate.stages[1])
+                        -- should be primary. Add other distinct stages from savedQuest.
+                        local currentStageFromGame = liveQuestToUpdate.stages[1]
+                        local combinedStages = { currentStageFromGame }
+                        local stagesSet = { [currentStageFromGame] = true }
+
+                        if savedQuest.stages and type(savedQuest.stages) == "table" then
+                            for _, oldStage in ipairs(savedQuest.stages) do
+                                if not stagesSet[oldStage] then
+                                    table.insert(combinedStages, oldStage)
+                                    stagesSet[oldStage] = true
+                                end
+                            end
+                        end
+                        liveQuestToUpdate.stages = combinedStages
+                    else
+                        -- Quest was in mod's save data but is NOT in the current game's active quests.
+                        -- It's an "orphaned" quest (e.g., removed by console, mod conflict).
+                        -- It's implicitly dropped because newSessionQuestList was built from current game state.
+                        -- If it was marked 'followed', that state will be lost, which is correct.
+                        core.log("OpenMWQuestList: Orphaned quest from save data dropped: " .. savedQuest.id)
+                    end
+                end
+            end
+
+            -- Ensure only one quest is actually marked as followed in the final list
+            local oneQuestIsMarkedFollowed = false
+            if followedQuestIdFromSave then
+                for _, q in ipairs(newSessionQuestList) do
+                    if q.id == followedQuestIdFromSave and q.followed then
+                        if oneQuestIsMarkedFollowed then
+                            q.followed = false -- Unfollow if another was already confirmed
+                        else
+                            oneQuestIsMarkedFollowed = true -- This is the one true followed quest
+                        end
+                    else
+                        q.followed = false -- Unfollow any others
+                    end
+                end
+            end
+            -- If the followedQuestIdFromSave pointed to an orphaned quest, or none was followed:
+            if not oneQuestIsMarkedFollowed then
+                for _, q in ipairs(newSessionQuestList) do q.followed = false end
+            end
+        end
     end
 
-    questList = data.questList
-    showFollowedQuest(getFollowedQuest(data.questList.quests))
+    -- Update the global questList object
+    questList.quests = newSessionQuestList
+    questList.version = modVersion -- Always set to current mod version after load/merge process
+
+    showFollowedQuest(getFollowedQuest(questList.quests))
 end
 
 local function getQuestList()

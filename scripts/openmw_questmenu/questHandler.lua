@@ -127,7 +127,7 @@ local function showFollowedQuest(quest)
                                     {
                                         template = I.MWUI.templates.textParagraph,
                                         props = {
-                                            size = util.vector2(playerCustomizationSettings:get('FMaxWidth'), 10),
+                                            size = util.vector2(playerCustomizationSettings:get('FWidth'), 10),
                                             text = text,
                                             textSize = playerCustomizationSettings:get('FTextSize'),
                                         },

@@ -77,10 +77,10 @@ I.Settings.registerGroup {
             default = 15,
         },
         {
-            key = 'FMaxWidth',
+            key = 'FWidth',
             renderer = 'number',
-            name = l10n("settings_f_max_width_name"),
-            description = l10n("settings_f_max_width_desc"),
+            name = l10n("settings_f_width_name"),
+            description = l10n("settings_f_width_desc"),
             default = 300,
         },
         {

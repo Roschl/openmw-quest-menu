@@ -77,6 +77,13 @@ I.Settings.registerGroup {
             default = 15,
         },
         {
+            key = 'FWidth',
+            renderer = 'number',
+            name = l10n("settings_f_width_name"),
+            description = l10n("settings_f_width_desc"),
+            default = 300,
+        },
+        {
             key = 'FIconSize',
             renderer = 'number',
             name = l10n("settings_f_icon_size_name"),

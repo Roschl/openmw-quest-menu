@@ -104,26 +104,35 @@ local function createQuest(quest, page)
         return nil
     end
 
-    local questNameText = {
-        template = I.MWUI.templates.textNormal,
-        type = ui.TYPE.Text,
-        props = {
-            text = quest.name,
-            textSize = text_size,
-            textColor = getColor()
+
+    local function createQuestNameText()
+        local text = quest.name
+
+        if quest.followed then
+            text = text .. ' *'
+        end
+
+        return {
+            template = I.MWUI.templates.textNormal,
+            type = ui.TYPE.Text,
+            props = {
+                text = text,
+                textSize = text_size,
+                textColor = getColor()
+            }
         }
-    }
+    end
 
     local function createContent()
         if (icon ~= nil) then
             return {
                 questLogo,
                 emptyHBox,
-                questNameText
+                createQuestNameText()
             }
         end
 
-        return { emptyHBox, questNameText }
+        return { emptyHBox, createQuestNameText() }
     end
 
     return {

@@ -431,7 +431,7 @@ createQuestMenu = function(page, quests)
         content = ui.content({
             createListNavigation("-", v2(0, .5), v2(0, .5)),
             pageText,
-            createListNavigation("+", v2(1, .5), v2(1, .5))
+            createListNavigation("+", v2(1, .5), v2(1, .5)),
         })
     }
 
@@ -485,6 +485,25 @@ createQuestMenu = function(page, quests)
                 createQuestMenu(1, I.OpenMWQuestList.getQuestList())
             end
         end, questMode == "ACTIVE")
+
+    local function createButtonRefetch()
+        if not playerSettings:get('Debugging') then
+            return {}
+        end
+
+        return UIComponents.createButton(l10n("debug_reload_quests_button"), text_size, buttonWidth * 2,
+            topButtonHeight,
+            nil, v2(0, .5),
+            function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    selectedQuest = nil
+                    questMode = "ACTIVE"
+                    createQuestMenu(1, I.OpenMWQuestList.fetchQuests())
+                end
+            end, false)
+    end
 
     local function createButtonFollow()
         if (not selectedQuest) then
@@ -573,7 +592,8 @@ createQuestMenu = function(page, quests)
                                 questBox,
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyVBox,
-                                buttonsBox
+                                buttonsBox,
+                                createButtonRefetch()
                             }),
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyVBox,

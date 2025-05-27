@@ -8,6 +8,8 @@ local util = require('openmw.util')
 local vfs = require('openmw.vfs')
 local async = require('openmw.async')
 
+local QuestCleaner = require('scripts.openmw_questmenu.questCleaner')
+
 local modVersion = "1.1.0"
 
 local questList = {
@@ -17,6 +19,11 @@ local questList = {
 local followedQuest = nil
 
 local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
+
+local function cleanQuestList()
+    questList.quests = QuestCleaner.cleanList(questList.quests)
+    return questList.quests
+end
 
 local function getQuestText(questId, stage)
     local dialogueRecord = core.dialogue.journal.records[questId]
@@ -203,7 +210,8 @@ local function toggleQuest(qid)
 end
 
 local function onLoadMidGame()
-    local newQuestList = {};
+    local newQuestList = {}
+    local addedQuests = 0
 
     for _, quest in pairs(types.Player.quests(self)) do
         local questExists = false
@@ -218,8 +226,8 @@ local function onLoadMidGame()
         if not questExists then
             local dialogueRecord = core.dialogue.journal.records[quest.id]
 
-            if dialogueRecord.questName and dialogueRecord.questName ~= "" then
-                print('Quest ' .. quest.id .. ' does not exist. Adding it!')
+            if dialogueRecord.questName and dialogueRecord.questName ~= "" and not QuestCleaner.isBlacklisted(quest.id) then
+                addedQuests = addedQuests + 1
                 local newQuest = {
                     id = quest.id,
                     name = dialogueRecord.questName,
@@ -235,6 +243,7 @@ local function onLoadMidGame()
     end
 
     questList.quests = newQuestList
+    ui.showMessage("Reloading: added " .. tostring(addedQuests) .. " quests.")
     return newQuestList
 end
 
@@ -249,7 +258,7 @@ local function onUpdateToNewVersion(oldList)
             quest.notes = nil
             quest.stages = {}
 
-            if (quest.name and quest.name ~= "") then
+            if (quest.name and quest.name ~= "" and not QuestCleaner.isBlacklisted(quest.id)) then
                 table.insert(quest.stages, quest.stage)
                 table.insert(newQuestList.quests, quest)
             end
@@ -289,7 +298,7 @@ local function onQuestUpdate(questId, stage)
     end
 
     -- If Quest doesnt exist yet, add new list entry:
-    if (questExists == false and dialogueRecord.questName and dialogueRecord.questName ~= "") then
+    if (questExists == false and dialogueRecord.questName and dialogueRecord.questName ~= "" and not QuestCleaner.isBlacklisted(qid)) then
         local newQuest = {
             id = qid,
             name = dialogueRecord.questName,
@@ -336,6 +345,7 @@ end
 return {
     interfaceName = 'OpenMWQuestList',
     interface = {
+        cleanQuestList = cleanQuestList,
         getQuestList = getQuestList,
         getQuestText = getQuestText,
         followQuest = followQuest,

@@ -13,8 +13,8 @@ local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
 local v2 = util.vector2
 
-local playerSettings = storage.playerSection('Settings/OpenMWQuestMenu/Options')
-local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/Customization')
+local playerSettings = storage.playerSection('Settings/OpenMWQuestMenu/1_Options')
+local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN

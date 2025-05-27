@@ -43,7 +43,7 @@ I.Settings.registerRenderer('OpenMWQuestMenu/inputKeySelection', function(value,
 end)
 
 I.Settings.registerGroup {
-    key = 'Settings/OpenMWQuestMenu/Options',
+    key = 'Settings/OpenMWQuestMenu/1_Options',
     page = 'OpenMWQuestMenu',
     l10n = 'OpenMWQuestMenu',
     name = l10n("settings_group_options"),
@@ -74,7 +74,7 @@ I.Settings.registerGroup {
 }
 
 I.Settings.registerGroup {
-    key = 'Settings/OpenMWQuestMenu/Customization',
+    key = 'Settings/OpenMWQuestMenu/2_Customization',
     page = 'OpenMWQuestMenu',
     l10n = 'OpenMWQuestMenu',
     name = l10n("settings_group_customization_name"),

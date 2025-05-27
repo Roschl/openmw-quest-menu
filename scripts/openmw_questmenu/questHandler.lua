@@ -16,7 +16,7 @@ local questList = {
 }
 local followedQuest = nil
 
-local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/Customization')
+local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
 
 local function getQuestText(questId, stage)
     local dialogueRecord = core.dialogue.journal.records[questId]

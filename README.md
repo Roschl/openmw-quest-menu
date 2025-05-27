@@ -1,3 +1,5 @@
+Find the Mod on Nexus: https://www.nexusmods.com/morrowind/mods/56273
+
 This mod adds a quest menu that displays all quests. The menu can be opened by pressing the X key. Clicking on a quest reveals the journal entries associated with that quest.
 
 You can change the default key for opening the menu in the Options -> Scripts -> OpenMW Quest Status Menu

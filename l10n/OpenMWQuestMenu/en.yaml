@@ -8,6 +8,8 @@ button_unfollow: "Unfollow"
 button_hide: "Hide"
 button_show: "Show"
 
+debug_reload_quests_button: "Reload existing Quests"
+
 error_no_information: "Error: No information found."
 error_no_quest: "No quest selected."
 

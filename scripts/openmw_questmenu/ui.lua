@@ -13,8 +13,8 @@ local UIComponents = require('scripts.openmw_questmenu.uiComponents')
 
 local v2 = util.vector2
 
-local playerSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuControls')
-local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuCustomization')
+local playerSettings = storage.playerSection('Settings/OpenMWQuestMenu/1_Options')
+local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
 
 local questMenu = nil
 local questMode = 'ACTIVE' -- ACTIVE, FINISHED, HIDDEN
@@ -104,26 +104,35 @@ local function createQuest(quest, page)
         return nil
     end
 
-    local questNameText = {
-        template = I.MWUI.templates.textNormal,
-        type = ui.TYPE.Text,
-        props = {
-            text = quest.name,
-            textSize = text_size,
-            textColor = getColor()
+
+    local function createQuestNameText()
+        local text = quest.name
+
+        if quest.followed then
+            text = text .. ' *'
+        end
+
+        return {
+            template = I.MWUI.templates.textNormal,
+            type = ui.TYPE.Text,
+            props = {
+                text = text,
+                textSize = text_size,
+                textColor = getColor()
+            }
         }
-    }
+    end
 
     local function createContent()
         if (icon ~= nil) then
             return {
                 questLogo,
                 emptyHBox,
-                questNameText
+                createQuestNameText()
             }
         end
 
-        return { emptyHBox, questNameText }
+        return { emptyHBox, createQuestNameText() }
     end
 
     return {
@@ -431,7 +440,7 @@ createQuestMenu = function(page, quests)
         content = ui.content({
             createListNavigation("-", v2(0, .5), v2(0, .5)),
             pageText,
-            createListNavigation("+", v2(1, .5), v2(1, .5))
+            createListNavigation("+", v2(1, .5), v2(1, .5)),
         })
     }
 
@@ -485,6 +494,25 @@ createQuestMenu = function(page, quests)
                 createQuestMenu(1, I.OpenMWQuestList.getQuestList())
             end
         end, questMode == "ACTIVE")
+
+    local function createButtonRefetch()
+        if not playerSettings:get('Debugging') then
+            return {}
+        end
+
+        return UIComponents.createButton(l10n("debug_reload_quests_button"), text_size, buttonWidth * 2,
+            topButtonHeight,
+            nil, v2(0, .5),
+            function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    selectedQuest = nil
+                    questMode = "ACTIVE"
+                    createQuestMenu(1, I.OpenMWQuestList.fetchQuests())
+                end
+            end, false)
+    end
 
     local function createButtonFollow()
         if (not selectedQuest) then
@@ -573,7 +601,8 @@ createQuestMenu = function(page, quests)
                                 questBox,
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyVBox,
-                                buttonsBox
+                                buttonsBox,
+                                createButtonRefetch()
                             }),
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyVBox,
@@ -601,7 +630,7 @@ createQuestMenu = function(page, quests)
 end
 
 local function onKeyPress(key)
-    if key.symbol == playerSettings:get('OpenMenu') then
+    if key.code == playerSettings:get('OpenMenu') then
         if showable == nil then
             I.UI.setMode('Interface', { windows = {} })
             if playerSettings:get('PlaySound') then

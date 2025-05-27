@@ -16,7 +16,7 @@ local questList = {
 }
 local followedQuest = nil
 
-local playerCustomizationSettings = storage.playerSection('SettingsPlayerOpenMWQuestMenuCustomization')
+local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
 
 local function getQuestText(questId, stage)
     local dialogueRecord = core.dialogue.journal.records[questId]
@@ -206,23 +206,36 @@ local function onLoadMidGame()
     local newQuestList = {};
 
     for _, quest in pairs(types.Player.quests(self)) do
-        local dialogueRecord = core.dialogue.journal.records[quest.id]
+        local questExists = false
+        for __, eQuest in pairs(questList.quests) do
+            if eQuest.id == quest.id then
+                questExists = true
+                print('Quest ' .. quest.id .. ' already exists. Skip!')
+                table.insert(newQuestList, eQuest)
+            end
+        end
 
-        if dialogueRecord.questName and dialogueRecord.questName ~= "" then
-            local newQuest = {
-                id = quest.id,
-                name = dialogueRecord.questName,
-                hidden = false,
-                finished = quest.finished,
-                followed = false,
-                stages = {}
-            }
-            table.insert(newQuest.stages, 1, quest.stage)
-            table.insert(newQuestList, newQuest)
+        if not questExists then
+            local dialogueRecord = core.dialogue.journal.records[quest.id]
+
+            if dialogueRecord.questName and dialogueRecord.questName ~= "" then
+                print('Quest ' .. quest.id .. ' does not exist. Adding it!')
+                local newQuest = {
+                    id = quest.id,
+                    name = dialogueRecord.questName,
+                    hidden = false,
+                    finished = quest.finished,
+                    followed = false,
+                    stages = {}
+                }
+                table.insert(newQuest.stages, 1, quest.stage)
+                table.insert(newQuestList, newQuest)
+            end
         end
     end
 
     questList.quests = newQuestList
+    return newQuestList
 end
 
 local function onUpdateToNewVersion(oldList)
@@ -326,6 +339,7 @@ return {
         getQuestList = getQuestList,
         getQuestText = getQuestText,
         followQuest = followQuest,
+        fetchQuests = onLoadMidGame,
         toggleQuest = toggleQuest
     },
     engineHandlers = {

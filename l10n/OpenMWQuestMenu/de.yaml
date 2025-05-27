@@ -8,7 +8,8 @@ button_unfollow: "Entfolgen"
 button_hide: "Verstecken"
 button_show: "Anzeigen"
 
-debug_reload_quests_button: "Lade existierende Quests"
+debug_reload_quests_button: "Neuladen"
+debug_clean_quests_button: "Aufräumen"
 
 error_no_information: "Fehler: Keine Informationen gefunden."
 error_no_quest: "Keine Quest ausgewählt."

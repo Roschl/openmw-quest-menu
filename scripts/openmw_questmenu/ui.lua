@@ -495,12 +495,31 @@ createQuestMenu = function(page, quests)
             end
         end, questMode == "ACTIVE")
 
-    local function createButtonRefetch()
-        if not playerSettings:get('Debugging') then
-            return {}
-        end
+    local buttonTopGap = {
+        type = ui.TYPE.Widget,
+        props = {
+            anchor = v2(0, .5),
+            size = v2(10, 30)
+        }
+    }
 
-        return UIComponents.createButton(l10n("debug_reload_quests_button"), text_size, buttonWidth * 2,
+    local function createButtonClean()
+        return UIComponents.createButton(l10n("debug_clean_quests_button"), text_size, buttonWidth,
+            topButtonHeight,
+            nil, v2(0, .5),
+            function()
+                if questMenu then
+                    questMenu:destroy()
+                    questMenu = nil
+                    selectedQuest = nil
+                    questMode = "ACTIVE"
+                    createQuestMenu(1, I.OpenMWQuestList.cleanQuestList())
+                end
+            end, false)
+    end
+
+    local function createButtonReload()
+        return UIComponents.createButton(l10n("debug_reload_quests_button"), text_size, buttonWidth,
             topButtonHeight,
             nil, v2(0, .5),
             function()
@@ -512,6 +531,18 @@ createQuestMenu = function(page, quests)
                     createQuestMenu(1, I.OpenMWQuestList.fetchQuests())
                 end
             end, false)
+    end
+
+    local function createDebugActions()
+        if not playerSettings:get('Debugging') then
+            return {}
+        end
+
+        return UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
+            createButtonClean(),
+            buttonTopGap,
+            createButtonReload()
+        }))
     end
 
     local function createButtonFollow()
@@ -547,14 +578,6 @@ createQuestMenu = function(page, quests)
             end
         end)
     end
-
-    local buttonTopGap = {
-        type = ui.TYPE.Widget,
-        props = {
-            anchor = v2(0, .5),
-            size = v2(10, 30)
-        }
-    }
 
     local mainWindow = {
         type = ui.TYPE.Container,
@@ -602,7 +625,7 @@ createQuestMenu = function(page, quests)
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyVBox,
                                 buttonsBox,
-                                createButtonRefetch()
+                                createDebugActions(),
                             }),
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyVBox,

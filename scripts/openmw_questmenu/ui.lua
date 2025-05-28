@@ -612,6 +612,7 @@ createQuestMenu = function(page, quests)
                         content = ui.content {
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyVBox,
+                                createDebugActions(),
                                 UIComponents.createButtonGroup(widget_width / 2 * 0.85, ui.content({
                                     buttonActive,
                                     buttonTopGap,
@@ -625,7 +626,6 @@ createQuestMenu = function(page, quests)
                                 UIComponents.createHorizontalLine(widget_width / 2 * 0.85),
                                 emptyVBox,
                                 buttonsBox,
-                                createDebugActions(),
                             }),
                             UIComponents.createBox(widget_width / 2, widget_height - 20, ui.content {
                                 emptyVBox,

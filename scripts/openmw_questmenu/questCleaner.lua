@@ -5,6 +5,10 @@ local function isBlacklisted(questId)
     local dialogueRecord = core.dialogue.journal.records[questId]
     local canBeFinished = false
 
+    if not dialogueRecord or not dialogueRecord.infos then
+        return true
+    end
+
     for __, info in pairs(dialogueRecord.infos) do
         if info.isQuestFinished == true then
             canBeFinished = true

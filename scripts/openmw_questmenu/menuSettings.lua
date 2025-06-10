@@ -42,6 +42,8 @@ I.Settings.registerRenderer('OpenMWQuestMenu/inputKeySelection', function(value,
     }
 end)
 
+local positions = { 'up', 'right', 'down', 'left', 'none' }
+
 I.Settings.registerGroup {
     key = 'Settings/OpenMWQuestMenu/1_Options',
     page = 'OpenMWQuestMenu',
@@ -55,6 +57,17 @@ I.Settings.registerGroup {
             name = l10n("settings_open_menu_name"),
             description = l10n("settings_open_menu_desc"),
             default = input.KEY.X
+        },
+        {
+            key = 'OpenMenuController',
+            renderer = 'select',
+            name = l10n("settings_open_menu_controller_name"),
+            description = l10n("settings_open_menu_controller_desc"),
+            default = "up",
+            argument = {
+                l10n = 'OpenMWQuestMenu',
+                items = positions
+            }
         },
         {
             key = 'PlaySound',
@@ -94,6 +107,13 @@ I.Settings.registerGroup {
             name = l10n("settings_max_height_name"),
             description = l10n("settings_max_height_desc"),
             default = 1000,
+        },
+        {
+            key = 'ShowLessQuests',
+            renderer = "checkbox",
+            name = l10n("settings_less_quests_name"),
+            description = l10n("settings_less_quests_desc"),
+            default = false,
         },
         {
             key = 'MaxIconSize',

@@ -42,7 +42,7 @@ I.Settings.registerRenderer('OpenMWQuestMenu/inputKeySelection', function(value,
     }
 end)
 
-local positions = { 'up', 'right', 'down', 'left', 'none' }
+local directions = { 'up', 'right', 'down', 'left', 'none' }
 
 I.Settings.registerGroup {
     key = 'Settings/OpenMWQuestMenu/1_Options',
@@ -63,10 +63,10 @@ I.Settings.registerGroup {
             renderer = 'select',
             name = l10n("settings_open_menu_controller_name"),
             description = l10n("settings_open_menu_controller_desc"),
-            default = "up",
+            default = "none",
             argument = {
                 l10n = 'OpenMWQuestMenu',
-                items = positions
+                items = directions
             }
         },
         {

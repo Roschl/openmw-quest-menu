@@ -50,6 +50,11 @@ local createQuestMenu
 local selectedQuest = nil
 
 local questsPerPage = math.floor(contentHeight / vertical_block_size)
+if playerCustomizationSettings:get('ShowLessQuests') == true then
+    questsPerPage = questsPerPage - 1
+    contentHeight = contentHeight - vertical_block_size
+end
+
 local detailPage = 1
 
 local emptyVBox = {
@@ -652,26 +657,37 @@ createQuestMenu = function(page, quests)
     questMenu = ui.create(mainWindow)
 end
 
+local function toggleMenu()
+    if showable == nil then
+        I.UI.setMode('Interface', { windows = {} })
+        if playerSettings:get('PlaySound') then
+            ambient.playSoundFile("Sound\\Fx\\item\\bookopen.wav", { volume = 0.4 })
+        end
+        createQuestMenu(1, I.OpenMWQuestList.getQuestList())
+        showable = true
+    else
+        I.UI.removeMode('Interface')
+        if (questMenu) then
+            if playerSettings:get('PlaySound') then
+                ambient.playSoundFile("Sound\\Fx\\item\\bookclose.wav", { volume = 0.4 })
+            end
+            questMenu:destroy()
+            questMenu = nil;
+        end
+        showable = nil
+    end
+end
+
+local function onControllerButtonPress(key)
+    local controllerKey = playerSettings:get('OpenMenuController')
+    if (controllerKey == 'up' and key == 11) or (controllerKey == 'right' and key == 14) or (controllerKey == 'down' and key == 12) or (controllerKey == 'left' and key == 13) then
+        toggleMenu()
+    end
+end
+
 local function onKeyPress(key)
     if key.code == playerSettings:get('OpenMenu') then
-        if showable == nil then
-            I.UI.setMode('Interface', { windows = {} })
-            if playerSettings:get('PlaySound') then
-                ambient.playSoundFile("Sound\\Fx\\item\\bookopen.wav", { volume = 0.4 })
-            end
-            createQuestMenu(1, I.OpenMWQuestList.getQuestList())
-            showable = true
-        else
-            I.UI.removeMode('Interface')
-            if (questMenu) then
-                if playerSettings:get('PlaySound') then
-                    ambient.playSoundFile("Sound\\Fx\\item\\bookclose.wav", { volume = 0.4 })
-                end
-                questMenu:destroy()
-                questMenu = nil;
-            end
-            showable = nil
-        end
+        toggleMenu()
     end
 
     if key.code == input.KEY.Escape and questMenu and showable == true then
@@ -702,6 +718,7 @@ end
 return {
     engineHandlers = {
         onKeyPress = onKeyPress,
+        onControllerButtonPress = onControllerButtonPress,
         onInputAction = onInputAction
     }
 }

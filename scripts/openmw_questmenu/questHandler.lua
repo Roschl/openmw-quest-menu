@@ -27,6 +27,11 @@ end
 
 local function getQuestText(questId, stage)
     local dialogueRecord = core.dialogue.journal.records[questId]
+    
+    -- Triggers if the quest's source mod wasn't loaded
+    if dialogueRecord == nil then
+        return "Error: No information found."
+    end
 
     local filteredDialogue = nil
     for _, dialogue in pairs(dialogueRecord.infos) do

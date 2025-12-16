@@ -22,23 +22,6 @@ local function cleanQuestList()
     return questList.quests
 end
 
-local function getQuestText(questId, stage)
-    local dialogueRecord = core.dialogue.journal.records[questId]
-
-    local filteredDialogue = nil
-    for _, dialogue in pairs(dialogueRecord.infos) do
-        if dialogue.questStage == stage then
-            filteredDialogue = dialogue
-        end
-    end
-
-    if filteredDialogue == nil then
-        return "Error: No information found."
-    end
-
-    return filteredDialogue.text
-end
-
 local function getFollowedQuest(quests)
     for _, quest in pairs(quests) do
         if quest.followed == true then
@@ -78,8 +61,7 @@ local function showFollowedQuest(quest)
         return {}
     end
 
-    local stage = #quest.entries > 0 and quest.entries[1] or "No Information Found"
-    local text = getQuestText(quest.id, stage)
+    local text = quest.entries[1].text
 
     followedQuest = ui.create({
         type = ui.TYPE.Container,
@@ -214,8 +196,12 @@ local function onLoadMidGame(questMenuData)
     for i = 1, #entries do
         local entry = entries[i]
         local qid = entry.questId
+        local quest = nil;
 
         if qid then
+            local isHidden = questMenuData and questMenuData.hiddenQuests and questMenuData.hiddenQuests[qid] == true
+            local isActive = questMenuData and questMenuData.activeQuest and questMenuData.activeQuest == qid
+
             local playerQuestRecord = { stage = nil };
             for _, playerQuest in pairs(types.Player.quests(self)) do
                 if playerQuest.id == qid then
@@ -230,10 +216,7 @@ local function onLoadMidGame(questMenuData)
                     name = record.questName
                 end
 
-                local isHidden = questMenuData and questMenuData.hiddenQuests and questMenuData.hiddenQuests[qid] == true
-                local isActive = questMenuData and questMenuData.activeQuest and questMenuData.activeQuest == qid
-
-                local quest = {
+                quest = {
                     id = qid,
                     name = name or qid,
                     hidden = isHidden,
@@ -245,13 +228,13 @@ local function onLoadMidGame(questMenuData)
 
                 questMap[qid] = quest
                 table.insert(questList, quest)
-
-                if isActive then
-                    showFollowedQuest(quest)
-                end
             end
 
             table.insert(questMap[qid].entries, entry)
+
+            if isActive then
+                showFollowedQuest(quest)
+            end
         end
     end
 end
@@ -344,7 +327,6 @@ return {
     interface = {
         cleanQuestList = cleanQuestList,
         getQuestList = getQuestList,
-        getQuestText = getQuestText,
         followQuest = followQuest,
         fetchQuests = onLoadMidGame,
         toggleQuest = toggleQuest

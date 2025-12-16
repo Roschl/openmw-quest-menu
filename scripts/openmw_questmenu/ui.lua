@@ -215,15 +215,15 @@ local function createQuestDetail()
         }
     end
 
-    local stage = selectedQuest.stages[detailPage]
-    local text = I.OpenMWQuestList.getQuestText(selectedQuest.id, stage)
+    local entry = selectedQuest.entries[detailPage]
+    local text = entry.text
 
     local content = {}
     if playerSettings:get('Debugging') == true then
         table.insert(content, {
             type = ui.TYPE.Text,
             props = {
-                text = "id: " .. selectedQuest.id .. " / " .. "stage: " .. stage,
+                text = "id: " .. selectedQuest.id .. " / " .. "stage: " .. selectedQuest.stage,
                 textColor = util.color.rgb(255, 255, 255),
                 textSize = text_size,
                 autoSize = false,
@@ -385,7 +385,7 @@ createQuestMenu = function(page, quests)
         local text = direction == "+" and l10n("button_next") or l10n("button_back")
         local nextPage = direction == "+" and (detailPage + 1) or (detailPage - 1)
 
-        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.stages)) then
+        if ((direction == "-" and nextPage < 1) or (direction == "+" and nextPage > #selectedQuest.entries)) then
             return {}
         end
 
@@ -420,7 +420,7 @@ createQuestMenu = function(page, quests)
             return tostring(detailPage);
         end
 
-        return tostring(detailPage) .. " / " .. tostring(#selectedQuest.stages)
+        return tostring(detailPage) .. " / " .. tostring(#selectedQuest.entries)
     end
 
     local detailPageText = {
@@ -686,6 +686,7 @@ local function onControllerButtonPress(key)
 end
 
 local function onKeyPress(key)
+    I.OpenMWQuestList.getQuestList()
     if key.code == playerSettings:get('OpenMenu') then
         toggleMenu()
     end

@@ -10,12 +10,9 @@ local async = require('openmw.async')
 
 local QuestCleaner = require('scripts.openmw_questmenu.questCleaner')
 
-local modVersion = "1.1.0"
+local modVersion = "1.4.0"
 
-local questList = {
-    quests = {},
-    version = modVersion
-}
+local questList = {}
 local followedQuest = nil
 
 local playerCustomizationSettings = storage.playerSection('Settings/OpenMWQuestMenu/2_Customization')
@@ -81,7 +78,7 @@ local function showFollowedQuest(quest)
         return {}
     end
 
-    local stage = #quest.stages > 0 and quest.stages[1] or "No Information Found"
+    local stage = #quest.entries > 0 and quest.entries[1] or "No Information Found"
     local text = getQuestText(quest.id, stage)
 
     followedQuest = ui.create({
@@ -173,7 +170,7 @@ local function followQuest(qid)
     local newFollowedQuest = nil
     local newQuestList = {}
 
-    for _, quest in ipairs(questList.quests) do
+    for _, quest in ipairs(questList) do
         if quest.id == qid then
             newFollowedQuest = quest
             newFollowedQuest.followed = not quest.followed
@@ -193,79 +190,70 @@ local function followQuest(qid)
         followedQuest = nil
     end
 
-    questList.quests = newQuestList
+    questList = newQuestList
     return newQuestList
 end
 
 local function toggleQuest(qid)
     local newQuestList = {};
-    for _, quest in ipairs(questList.quests) do
+    for _, quest in ipairs(questList) do
         if quest.id == qid then
             quest.hidden = not quest.hidden
         end
 
         table.insert(newQuestList, quest)
     end
-    questList.quests = newQuestList
-end
-
-local function onLoadMidGame()
-    local newQuestList = {}
-    local addedQuests = 0
-
-    for _, quest in pairs(types.Player.quests(self)) do
-        local questExists = false
-        for __, eQuest in pairs(questList.quests) do
-            if eQuest.id == quest.id then
-                questExists = true
-                print('Quest ' .. quest.id .. ' already exists. Skip!')
-                table.insert(newQuestList, eQuest)
-            end
-        end
-
-        if not questExists then
-            local dialogueRecord = core.dialogue.journal.records[quest.id]
-
-            if dialogueRecord.questName and dialogueRecord.questName ~= "" and not QuestCleaner.isBlacklisted(quest.id) then
-                addedQuests = addedQuests + 1
-                local newQuest = {
-                    id = quest.id,
-                    name = dialogueRecord.questName,
-                    hidden = false,
-                    finished = quest.finished,
-                    followed = false,
-                    stages = {}
-                }
-                table.insert(newQuest.stages, 1, quest.stage)
-                table.insert(newQuestList, newQuest)
-            end
-        end
-    end
-
-    questList.quests = newQuestList
-    ui.showMessage("Reloading: added " .. tostring(addedQuests) .. " quests.")
-    return newQuestList
-end
-
-local function onUpdateToNewVersion(oldList)
-    local newQuestList = {
-        quests = {},
-        version = modVersion
-    };
-
-    if (not oldList.version) then
-        for _, quest in ipairs(oldList) do
-            quest.notes = nil
-            quest.stages = {}
-
-            if (quest.name and quest.name ~= "" and not QuestCleaner.isBlacklisted(quest.id)) then
-                table.insert(quest.stages, quest.stage)
-                table.insert(newQuestList.quests, quest)
-            end
-        end
-    end
-
     questList = newQuestList
+end
+
+local function onLoadMidGame(questMenuData)
+    local journal = types.Player.journal(self)
+    local entries = journal.journalTextEntries
+    local questMap = {}
+
+    for i = 1, #entries do
+        local entry = entries[i]
+        local qid = entry.questId
+
+        if qid then
+            local playerQuestRecord = { stage = nil };
+            for _, playerQuest in pairs(types.Player.quests(self)) do
+                if playerQuest.id == qid then
+                    playerQuestRecord = playerQuest
+                end
+            end
+
+            if not questMap[qid] then
+                local name = nil
+                local record = core.dialogue.journal.records[qid]
+                if record and record.questName then
+                    name = record.questName
+                end
+
+                local isHidden = questMenuData and questMenuData.hiddenQuests and questMenuData.hiddenQuests[qid] == true
+                local isActive = questMenuData and questMenuData.activeQuest and questMenuData.activeQuest == qid
+
+                local quest = {
+                    id = qid,
+                    name = name or qid,
+                    hidden = isHidden,
+                    finished = false,
+                    followed = isActive,
+                    entries = {},
+                    stage = playerQuestRecord.stage
+                }
+
+                questMap[qid] = quest
+                table.insert(questList, quest)
+
+                if isActive then
+                    showFollowedQuest(quest)
+                end
+            end
+
+            table.insert(questMap[qid].entries, entry)
+        end
+    end
 end
 
 local function onQuestUpdate(questId, stage)
@@ -281,12 +269,12 @@ local function onQuestUpdate(questId, stage)
 
     local questExists = false;
     local newQuestList = {};
-    for _, quest in ipairs(questList.quests) do
+    for _, quest in ipairs(questList) do
         -- If Quest already exists just update it:
         if quest.id == qid then
             questExists = true
             quest.finished = isFinished
-            table.insert(quest.stages, 1, stage)
+            table.insert(quest.entries, 1, stage)
         end
 
         -- Unfollow quest when it is finished
@@ -302,10 +290,8 @@ local function onQuestUpdate(questId, stage)
         local newQuest = {
             id = qid,
             name = dialogueRecord.questName,
-            hidden = false,
             finished = isFinished,
-            followed = false,
-            stages = {}
+            entries = {}
         }
 
         table.insert(newQuest.stages, stage)
@@ -317,29 +303,40 @@ local function onQuestUpdate(questId, stage)
 end
 
 local function onSave()
+    local hiddenQuests = {};
+    local activeQuest = nil;
+
+    for _, quest in ipairs(questList) do
+        if quest.hidden == true then
+            hiddenQuests[quest.id] = true
+        end
+
+        if quest.followed == true then
+            activeQuest = quest.id
+        end
+    end
+
+
     return {
-        questList = questList,
+        questList = nil,
+        questMenu = {
+            hiddenQuests = hiddenQuests,
+            activeQuest = activeQuest
+        }
     }
 end
 
 local function onLoad(data)
-    if not data or not data.questList then
+    if (data == nil or data.questMenu == nil) then
         onLoadMidGame()
-        return
+    else
+        print('ONLOAD ' .. #data.questMenu.hiddenQuests)
+        onLoadMidGame(data.questMenu)
     end
-
-    -- Legacy Support
-    if not data.questList.version or data.questList.version ~= modVersion then
-        onUpdateToNewVersion(data.questList)
-        return
-    end
-
-    questList = data.questList
-    showFollowedQuest(getFollowedQuest(data.questList.quests))
 end
 
 local function getQuestList()
-    return questList.quests
+    return questList
 end
 
 return {
